@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cooler AI Model Explorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top */
+            min-height: 100vh;
+            padding-top: 20px; /* Add padding at the top */
+            padding-bottom: 20px; /* Add padding at the bottom */
+        }
+        .container {
+            max-width: 800px;
+            width: 95%; /* Make it slightly responsive */
+            margin: 0 auto; /* Center horizontally */
+            background-color: #ffffff;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        select, textarea, button {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            box-sizing: border-box; /* Include padding in width */
+        }
+        select {
+            cursor: pointer;
+        }
+        textarea {
+            resize: vertical; /* Allow vertical resize */
+            min-height: 100px;
+        }
+        button {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s ease, transform 0.1s ease;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #0056b3, #004085);
+        }
+        button:active {
+             transform: scale(0.98);
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: none; /* Hidden by default */
+            text-align: center;
+            margin-top: 20px;
+            color: #555;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px; /* Space between spinner and text */
+        }
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: #007bff;
+            animation: spin 1s ease infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .response {
+            margin-top: 25px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            min-height: 150px;
+            white-space: pre-wrap; /* Preserve formatting */
+            word-wrap: break-word; /* Break long words */
+            font-size: 15px;
+            line-height: 1.6;
+            color: #333;
+            transition: background-color 0.3s ease; /* Smooth transition if needed */
+        }
+        .response.error {
+            background-color: #ffebee;
+            color: #c62828;
+            border-color: #ef9a9a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Model Explorer</h1>
+        <select id="model-select">
+            <!-- Updated list including potentially speculative models -->
+            <option value="openrouter:anthropic/claude-3.5-sonnet-20240620">Anthropic Claude 3.5 Sonnet (June 2024)</option>
+            <option value="openrouter:anthropic/claude-3.7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+            <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
+            <option value="openrouter:openai/o4-mini-high"> o4-mini-high </option>
+            <option value= "openrouter:google/gemini-2.5-pro-preview-03-25"> gemini-2.5 pro </option>
+            <option value="openrouter:openai/o3">OpenAI O3</option>
+            <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+            <option value="openrouter:openai/gpt-4.1">OpenAI GPT-4.1</option>
+            <!-- Adding a few known models just in case -->
+        </select>
+        <textarea id="prompt" rows="5" placeholder="Enter your prompt here...">Explain how solar panels work in simple terms.</textarea>
+        <button id="generate">Generate Response</button>
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <span>Thinking...</span>
+        </div>
+        <div id="response" class="response">Your generated response will appear here.</div>
+    </div>
+
+    <script src="https://js.puter.com/v2/"></script>
+    <script>
+        const generateButton = document.getElementById('generate');
+        const modelSelect = document.getElementById('model-select');
+        const promptInput = document.getElementById('prompt');
+        const responseDiv = document.getElementById('response');
+        const loadingDiv = document.getElementById('loading');
+
+        generateButton.addEventListener('click', async () => {
+            const selectedModel = modelSelect.value;
+            const prompt = promptInput.value.trim(); // Use trim()
+
+            if (!prompt) {
+                responseDiv.textContent = 'Please enter a prompt.';
+                responseDiv.className = 'response error'; // Use error class
+                return;
+            }
+
+            // Reset response area and show loading
+            responseDiv.textContent = '';
+            responseDiv.className = 'response'; // Reset class
+            loadingDiv.style.display = 'flex'; // Use flex to show spinner + text
+            generateButton.disabled = true; // Disable button
+
+            try {
+                // Make the API call
+                const response = await puter.ai.chat(prompt, { model: selectedModel });
+
+                // Display the response
+                responseDiv.textContent = response; // Using textContent is safer for text responses
+                responseDiv.className = 'response'; // Ensure standard class
+
+            } catch (error) {
+                // Display error message
+                console.error("API Error:", error); // Log the full error for debugging
+                responseDiv.textContent = `Error: ${error.message}\n\n(The selected model might be unavailable or invalid.)`;
+                responseDiv.className = 'response error'; // Use error class
+
+            } finally {
+                // Hide loading and re-enable button
+                loadingDiv.style.display = 'none';
+                generateButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
