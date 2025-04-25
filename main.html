@@ -272,11 +272,10 @@
         <div class="controls">
              <label for="model-select">Select AI Model:</label>
             <select id="model-select">
-                 <option value="openrouter:anthropic/claude-3.5-sonnet-20240620">Anthropic Claude 3.5 Sonnet</option>
-                <option value="openrouter:anthropic/claude-3.7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                 <option value="claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
+                <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
                 <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
-                <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
-                <option value="openrouter:google/gemini-2.5-pro-preview-03-25">Google gemini-2.5-pro</option>
+                <option value="o4-mini">OpenAI o4-mini-high</option>
                 <option value="openrouter:openai/o3">OpenAI O3</option>
                 <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
                 <option value="gpt-4.1">OpenAI GPT-4.1</option>
@@ -308,7 +307,6 @@
         const loadingDiv = document.getElementById('loading');
 
         // Store conversation history { role: 'user' | 'assistant' | 'error' | 'system', content: string, model?: string }
-        // The 'system' role here is just for the initial display message
         let chatMessages = [
             { role: 'system', content: 'Hello! Select a model and ask me anything. Try asking for code or a list!', model: 'System' }
         ];
@@ -325,7 +323,7 @@
                 let labelHtml = '';
                 // Display model label for assistant/system, User label for user
                 if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
-                    const modelName = DOMPurify.sanitize(msg.model.includes('/') ? msg.model.split('/').pop() : msg.model);
+                    const modelName = DOMPurify.sanitize(msg.model.includes(':') ? msg.model.split(':').pop().split('/').pop() : msg.model.split('/').pop()); // Handle openrouter format too
                     labelHtml = `<span class="model-label">${modelName}</span>`;
                 } else if (msg.role === 'user') {
                      labelHtml = `<span class="model-label">User</span>`;
@@ -384,35 +382,60 @@
             console.log(`Sending to puter.ai (${selectedModel}):`, prompt);
 
             try {
-                // *** REVERTED API CALL ***
                 // Call puter.ai.chat with the single prompt string and model option
                 const response = await puter.ai.chat(prompt, { model: selectedModel });
-                // *** END REVERTED API CALL ***
 
-                console.log('Received from puter.ai:', response);
-
+                // --- MODIFIED RESPONSE HANDLING ---
+                console.log('Raw API Response:', JSON.stringify(response, null, 2)); // Log raw for debugging
                 let responseContent = '';
-                // Standardize response extraction (assuming response.message.content is the path)
-                if (response && response.message && typeof response.message.content === 'string') {
-                    responseContent = response.message.content;
-                    console.log('Extracted content:', responseContent);
-                } else {
-                     // Log the unexpected structure and provide a clear user message
-                     console.warn('Unexpected API response structure. Expected response.message.content.', response);
-                     responseContent = response ? `Received unexpected response format. Check console.` : 'Received empty or invalid response.';
-                }
 
-                // 3. Add assistant response to local history
-                chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
+                if (response && response.message && response.message.content) {
+                    // Check for Claude structure (content is an array with a text property)
+                    if (Array.isArray(response.message.content) && response.message.content.length > 0 && typeof response.message.content[0].text === 'string') {
+                        responseContent = response.message.content[0].text;
+                        console.log('Extracted content (Claude format):', responseContent);
+                    // Check for the other common structure (content is a direct string)
+                    } else if (typeof response.message.content === 'string') {
+                        responseContent = response.message.content;
+                        console.log('Extracted content (String format):', responseContent);
+                    // Handle cases where content exists but is neither expected format
+                    } else {
+                        console.warn('Unexpected content type inside response.message.content:', typeof response.message.content, response.message.content);
+                        responseContent = `Received response, but content format is unexpected. Check console.`;
+                    }
+                } else {
+                    // Handle cases where the expected response structure is missing
+                    console.warn('Unexpected API response structure. Expected response.message.content path.', response);
+                    responseContent = response ? `Received unexpected response format. Check console.` : 'Received empty or invalid response.';
+                    // If responseContent is still empty here, create an error message
+                    if (!responseContent) {
+                         chatMessages.push({
+                            role: 'error',
+                            content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: Received invalid or empty response structure. Please check the console.`
+                        });
+                         // Skip adding the empty 'assistant' message below
+                         throw new Error("Invalid response structure"); // Prevent adding empty assistant message
+                    }
+                }
+                // --- END MODIFIED RESPONSE HANDLING ---
+
+                // 3. Add assistant response to local history (only if content was successfully extracted)
+                 if (responseContent) { // Only add if we got some content
+                    chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
+                 }
+
 
             } catch (error) {
-                console.error("API Error:", error);
-                // 4. Add error message to local history
-                chatMessages.push({
-                    role: 'error',
-                    // Display a user-friendly error message, including the model name
-                    content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error'}. Please check the console for more details.`
-                });
+                console.error("API Error/Processing Error:", error);
+                // 4. Add error message to local history (if not already added due to invalid structure)
+                // Check if the last message is already an error for this interaction to avoid duplicates
+                 const lastMessage = chatMessages[chatMessages.length - 1];
+                 if (lastMessage?.role !== 'error' || lastMessage?.content.indexOf(selectedModel) === -1) {
+                     chatMessages.push({
+                        role: 'error',
+                        content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error'}. Please check the console for more details.`
+                    });
+                 }
             } finally {
                 // 5. Re-enable inputs, hide loading, render final state, focus input
                 promptInput.disabled = false;
