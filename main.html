@@ -1,179 +1,468 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Cooler AI Model Explorer</title>
+    <title>Chat AI Model Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://db.onlinewebfonts.com/c/4e97278c347e41ce57cf565b0f31390e?family=Dyslexie+Regular" rel="stylesheet" type="text/css" />
+    <!-- CDN for marked -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- CDN for DOMPurify -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
     <style>
+        :root {
+            --user-bg: #e1f5fe; /* Light blue for user */
+            --assistant-bg: #f1f1f1; /* Light grey for AI */
+            --error-bg: #ffebee;
+            --error-text: #c62828;
+            --border-color: #e0e0e0;
+            --input-bg: #ffffff;
+            --text-color: #333;
+            --container-bg: #ffffff;
+            --body-bg-start: #f0f2f5;
+            --body-bg-end: #e6e9ed;
+            --button-gradient-start: #007bff;
+            --button-gradient-end: #0056b3;
+            --button-hover-start: #0056b3;
+            --button-hover-end: #004085;
+            --button-disabled-bg: #cccccc;
+            --spinner-color: #007bff;
+            --code-bg: #2d2d2d; /* Dark background for code blocks */
+            --code-text: #f1f1f1; /* Light text for code blocks */
+            --code-border: #444;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-            background-color: #f0f2f5;
+            font-family: 'Dyslexie Regular', sans-serif;
+            background: linear-gradient(135deg, var(--body-bg-start) 0%, var(--body-bg-end) 100%);
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align items to the top */
+            align-items: center;
             min-height: 100vh;
-            padding-top: 20px; /* Add padding at the top */
-            padding-bottom: 20px; /* Add padding at the bottom */
+            margin: 0;
+            padding: 20px 0;
+            box-sizing: border-box;
         }
+
         .container {
             max-width: 800px;
-            width: 95%; /* Make it slightly responsive */
-            margin: 0 auto; /* Center horizontally */
-            background-color: #ffffff;
-            padding: 25px 30px;
+            width: 95%;
+            height: 85vh;
+            max-height: 700px;
+            background-color: var(--container-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
+
         h1 {
-            color: #333;
+            color: var(--text-color);
             text-align: center;
-            margin-bottom: 25px;
+            margin: 20px 0 15px 0;
             font-weight: 600;
+            font-size: 1.5em;
+            padding: 0 20px;
         }
-        select, textarea, button {
+
+        .controls {
+            padding: 0 30px 15px 30px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        select {
             width: 100%;
-            padding: 12px 15px;
-            margin-bottom: 15px;
+            padding: 10px 12px;
             border-radius: 8px;
             border: 1px solid #ccc;
-            font-size: 16px;
-            box-sizing: border-box; /* Include padding in width */
-        }
-        select {
+            font-size: 14px;
+            box-sizing: border-box;
             cursor: pointer;
+            background-color: var(--input-bg);
+            transition: border-color 0.2s ease;
         }
+        select:focus {
+            outline: none;
+            border-color: var(--button-gradient-start);
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 20px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            padding: 12px 15px;
+            border-radius: 10px;
+            max-width: 90%;
+            word-wrap: break-word;
+            font-size: 15px;
+            line-height: 1.5;
+            color: var(--text-color);
+            position: relative;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            background-color: var(--user-bg);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .message.assistant {
+            background-color: var(--assistant-bg);
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+         .message .model-label {
+            position: absolute;
+            top: -14px;
+            left: 10px;
+            font-size: 0.7em;
+            color: #777;
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 1px 5px;
+            border-radius: 3px;
+            z-index: 1;
+        }
+         .message.user .model-label {
+             left: auto;
+             right: 10px;
+         }
+
+        .message.error {
+            background-color: var(--error-bg);
+            color: var(--error-text);
+            border: 1px solid #ef9a9a;
+            align-self: flex-start;
+        }
+
+        /* --- Markdown Styling --- */
+        .message.assistant p:last-child { margin-bottom: 0; }
+        .message.assistant p { margin-bottom: 0.75em; }
+        .message.assistant pre {
+            background-color: var(--code-bg);
+            color: var(--code-text);
+            padding: 12px 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre;
+            word-wrap: normal;
+            border: 1px solid var(--code-border);
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+        .message.assistant code { font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
+        .message.assistant :not(pre) > code {
+            background-color: rgba(0, 0, 0, 0.06);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .message.assistant ul, .message.assistant ol { padding-left: 25px; margin: 10px 0; }
+        .message.assistant li { margin-bottom: 5px; }
+        /* --- End Markdown Styling --- */
+
+        .input-area {
+            display: flex;
+            padding: 15px 30px;
+            border-top: 1px solid var(--border-color);
+            gap: 10px;
+            align-items: flex-end;
+            background-color: #f9f9f9;
+        }
+
         textarea {
-            resize: vertical; /* Allow vertical resize */
-            min-height: 100px;
+            flex-grow: 1;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 15px;
+            resize: none;
+            box-sizing: border-box;
+            min-height: 44px;
+            max-height: 150px;
+            overflow-y: auto;
+            line-height: 1.4;
+            background-color: var(--input-bg);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
+        textarea:focus {
+             outline: none;
+             border-color: var(--button-gradient-start);
+             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+        }
+
         button {
-            background: linear-gradient(135deg, #007bff, #0056b3);
-            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
             border: none;
+            background: linear-gradient(135deg, var(--button-gradient-start), var(--button-gradient-end));
+            color: white;
             cursor: pointer;
             font-weight: 500;
-            transition: background 0.3s ease, transform 0.1s ease;
+            font-size: 15px;
+            transition: background 0.3s ease, transform 0.1s ease, box-shadow 0.2s ease;
+            height: 44px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         button:hover {
-            background: linear-gradient(135deg, #0056b3, #004085);
+            background: linear-gradient(135deg, var(--button-hover-start), var(--button-hover-end));
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         button:active {
              transform: scale(0.98);
+             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         }
         button:disabled {
-            background: #cccccc;
+            background: var(--button-disabled-bg);
             cursor: not-allowed;
+            box-shadow: none;
         }
+
         .loading {
             display: none; /* Hidden by default */
             text-align: center;
-            margin-top: 20px;
+            padding: 0 5px 0 5px;
             color: #555;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px; /* Space between spinner and text */
+            justify-content: flex-start;
+            gap: 8px;
+            font-size: 0.9em;
+            height: 44px;
+            flex-shrink: 0;
         }
+
         .spinner {
-            border: 4px solid rgba(0, 0, 0, 0.1);
-            width: 24px;
-            height: 24px;
+            border: 3px solid rgba(0, 0, 0, 0.1);
+            width: 18px;
+            height: 18px;
             border-radius: 50%;
-            border-left-color: #007bff;
+            border-left-color: var(--spinner-color);
             animation: spin 1s ease infinite;
+            flex-shrink: 0;
         }
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
-        }
-        .response {
-            margin-top: 25px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            background-color: #f9f9f9;
-            min-height: 150px;
-            white-space: pre-wrap; /* Preserve formatting */
-            word-wrap: break-word; /* Break long words */
-            font-size: 15px;
-            line-height: 1.6;
-            color: #333;
-            transition: background-color 0.3s ease; /* Smooth transition if needed */
-        }
-        .response.error {
-            background-color: #ffebee;
-            color: #c62828;
-            border-color: #ef9a9a;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>AI Model Explorer</h1>
-        <select id="model-select">
-            <!-- Updated list including potentially speculative models -->
-            <option value="openrouter:anthropic/claude-3.5-sonnet-20240620">Anthropic Claude 3.5 Sonnet (June 2024)</option>
-            <option value="openrouter:anthropic/claude-3.7-sonnet">Anthropic Claude 3.7 Sonnet</option>
-            <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
-            <option value="openrouter:openai/o4-mini-high"> o4-mini-high </option>
-            <option value= "openrouter:google/gemini-2.5-pro-preview-03-25"> gemini-2.5 pro </option>
-            <option value="openrouter:openai/o3">OpenAI O3</option>
-            <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-            <option value="openrouter:openai/gpt-4.1">OpenAI GPT-4.1</option>
-            <!-- Adding a few known models just in case -->
-        </select>
-        <textarea id="prompt" rows="5" placeholder="Enter your prompt here...">Explain how solar panels work in simple terms.</textarea>
-        <button id="generate">Generate Response</button>
-        <div id="loading" class="loading">
-            <div class="spinner"></div>
-            <span>Thinking...</span>
+        <div class="controls">
+             <label for="model-select">Select AI Model:</label>
+            <select id="model-select">
+                 <option value="openrouter:anthropic/claude-3.5-sonnet-20240620">Anthropic Claude 3.5 Sonnet</option>
+                <option value="openrouter:anthropic/claude-3.7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
+                <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
+                <option value="openrouter:google/gemini-2.5-pro-preview-03-25">Google gemini-2.5-pro</option>
+                <option value="openrouter:openai/o3">OpenAI O3</option>
+                <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                <option value="gpt-4.1">OpenAI GPT-4.1</option>
+            </select>
         </div>
-        <div id="response" class="response">Your generated response will appear here.</div>
+        <div class="chat-history" id="chat-history">
+             <!-- Initial system message -->
+             <div class="message assistant">
+                 <span class="model-label">System</span>
+                 <span>Hello! Select a model and ask me anything. Try asking for code or a list!</span>
+            </div>
+        </div>
+
+        <div class="input-area">
+            <textarea id="prompt-input" rows="1" placeholder="Enter your prompt here..."></textarea>
+            <button id="send-button">Send</button>
+            <div id="loading" class="loading">
+                <div class="spinner"></div>
+            </div>
+        </div>
     </div>
 
     <script src="https://js.puter.com/v2/"></script>
     <script>
-        const generateButton = document.getElementById('generate');
+        const chatHistory = document.getElementById('chat-history');
+        const promptInput = document.getElementById('prompt-input');
+        const sendButton = document.getElementById('send-button');
         const modelSelect = document.getElementById('model-select');
-        const promptInput = document.getElementById('prompt');
-        const responseDiv = document.getElementById('response');
         const loadingDiv = document.getElementById('loading');
 
-        generateButton.addEventListener('click', async () => {
-            const selectedModel = modelSelect.value;
-            const prompt = promptInput.value.trim(); // Use trim()
+        // Store conversation history { role: 'user' | 'assistant' | 'error' | 'system', content: string, model?: string }
+        // The 'system' role here is just for the initial display message
+        let chatMessages = [
+            { role: 'system', content: 'Hello! Select a model and ask me anything. Try asking for code or a list!', model: 'System' }
+        ];
 
-            if (!prompt) {
-                responseDiv.textContent = 'Please enter a prompt.';
-                responseDiv.className = 'response error'; // Use error class
-                return;
+        // Function to render messages from chatMessages array
+        function renderChatHistory(newMessageAdded = false) {
+            const isScrolledToBottom = chatHistory.scrollHeight - chatHistory.clientHeight <= chatHistory.scrollTop + 10; // Tolerance
+
+            chatHistory.innerHTML = ''; // Clear existing messages before re-rendering
+            chatMessages.forEach((msg, index) => {
+                const messageElement = document.createElement('div');
+                messageElement.classList.add('message', msg.role);
+
+                let labelHtml = '';
+                // Display model label for assistant/system, User label for user
+                if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
+                    const modelName = DOMPurify.sanitize(msg.model.includes('/') ? msg.model.split('/').pop() : msg.model);
+                    labelHtml = `<span class="model-label">${modelName}</span>`;
+                } else if (msg.role === 'user') {
+                     labelHtml = `<span class="model-label">User</span>`;
+                }
+
+                // Render content based on role
+                if (msg.role === 'assistant') {
+                    try {
+                        // Use marked and DOMPurify for assistant messages
+                        const rawHtml = marked.parse(msg.content || '');
+                        const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+                        messageElement.innerHTML = labelHtml + sanitizedHtml;
+                    } catch (parseError) {
+                        console.error("Markdown parsing/sanitizing error:", parseError);
+                        // Fallback to plain text rendering on error
+                        const contentElement = document.createElement('span');
+                        contentElement.textContent = msg.content || '';
+                        messageElement.innerHTML = labelHtml;
+                        messageElement.appendChild(contentElement);
+                    }
+                } else {
+                    // Render user, system, or error messages as plain text
+                    const contentElement = document.createElement('span');
+                    contentElement.textContent = msg.content || '';
+                    messageElement.innerHTML = labelHtml;
+                    messageElement.appendChild(contentElement);
+                }
+                chatHistory.appendChild(messageElement);
+            });
+
+            // Scroll to bottom if it was already there or if a new message was added
+            if (isScrolledToBottom || newMessageAdded) {
+                chatHistory.scrollTop = chatHistory.scrollHeight;
             }
+        }
 
-            // Reset response area and show loading
-            responseDiv.textContent = '';
-            responseDiv.className = 'response'; // Reset class
-            loadingDiv.style.display = 'flex'; // Use flex to show spinner + text
-            generateButton.disabled = true; // Disable button
+        // Function to handle sending message and receiving response
+        async function sendMessage() {
+            const prompt = promptInput.value.trim();
+            const selectedModel = modelSelect.value;
+
+            if (!prompt) return; // Do nothing if input is empty
+
+            // 1. Add user message to local history and render
+            chatMessages.push({ role: 'user', content: prompt });
+            renderChatHistory(true); // Render immediately and scroll
+
+            // 2. Clear input, disable controls, show loading
+            promptInput.value = '';
+            promptInput.disabled = true;
+            sendButton.disabled = true;
+            modelSelect.disabled = true;
+            loadingDiv.style.display = 'flex';
+            adjustTextareaHeight(); // Reset height after clearing
+
+            console.log(`Sending to puter.ai (${selectedModel}):`, prompt);
 
             try {
-                // Make the API call
+                // *** REVERTED API CALL ***
+                // Call puter.ai.chat with the single prompt string and model option
                 const response = await puter.ai.chat(prompt, { model: selectedModel });
+                // *** END REVERTED API CALL ***
 
-                // Display the response
-                responseDiv.textContent = response; // Using textContent is safer for text responses
-                responseDiv.className = 'response'; // Ensure standard class
+                console.log('Received from puter.ai:', response);
+
+                let responseContent = '';
+                // Standardize response extraction (assuming response.message.content is the path)
+                if (response && response.message && typeof response.message.content === 'string') {
+                    responseContent = response.message.content;
+                    console.log('Extracted content:', responseContent);
+                } else {
+                     // Log the unexpected structure and provide a clear user message
+                     console.warn('Unexpected API response structure. Expected response.message.content.', response);
+                     responseContent = response ? `Received unexpected response format. Check console.` : 'Received empty or invalid response.';
+                }
+
+                // 3. Add assistant response to local history
+                chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
 
             } catch (error) {
-                // Display error message
-                console.error("API Error:", error); // Log the full error for debugging
-                responseDiv.textContent = `Error: ${error.message}\n\n(The selected model might be unavailable or invalid.)`;
-                responseDiv.className = 'response error'; // Use error class
-
+                console.error("API Error:", error);
+                // 4. Add error message to local history
+                chatMessages.push({
+                    role: 'error',
+                    // Display a user-friendly error message, including the model name
+                    content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error'}. Please check the console for more details.`
+                });
             } finally {
-                // Hide loading and re-enable button
+                // 5. Re-enable inputs, hide loading, render final state, focus input
+                promptInput.disabled = false;
+                sendButton.disabled = false;
+                modelSelect.disabled = false;
                 loadingDiv.style.display = 'none';
-                generateButton.disabled = false;
+                renderChatHistory(true); // Render final state including response/error and scroll
+                promptInput.focus(); // Return focus to input field
+            }
+        }
+
+        // --- Textarea Auto-Resize ---
+        function adjustTextareaHeight() {
+            promptInput.style.height = 'auto'; // Reset height to get accurate scrollHeight
+            let scrollHeight = promptInput.scrollHeight;
+            const style = window.getComputedStyle(promptInput);
+            const borderTop = parseInt(style.borderTopWidth, 10) || 0;
+            const borderBottom = parseInt(style.borderBottomWidth, 10) || 0;
+
+            // Calculate the required height including border
+            const requiredHeight = scrollHeight + borderTop + borderBottom;
+            const maxHeight = parseInt(style.maxHeight, 10) || 150; // Use default if maxHeight not set
+
+            if (requiredHeight > maxHeight) {
+                 // If content height exceeds max height, set to max and enable scroll
+                 promptInput.style.height = `${maxHeight}px`;
+                 promptInput.style.overflowY = 'auto';
+            } else {
+                // Otherwise, set height to content height and hide scroll
+                promptInput.style.height = `${requiredHeight}px`;
+                promptInput.style.overflowY = 'hidden';
+            }
+        }
+
+        // --- Event Listeners ---
+        promptInput.addEventListener('input', adjustTextareaHeight); // Adjust height while typing
+        promptInput.addEventListener('keydown', (e) => {
+            // Send on Enter (but not Shift+Enter for new lines)
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // Prevent adding a newline
+                sendMessage();
             }
         });
+        sendButton.addEventListener('click', sendMessage); // Send on button click
+
+        // --- Initial Setup ---
+        renderChatHistory(); // Render the initial system message
+        adjustTextareaHeight(); // Set initial textarea height
+        promptInput.focus(); // Focus the input field on page load
+
     </script>
 </body>
 </html>
