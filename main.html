@@ -273,15 +273,15 @@
              <label for="model-select">Select AI Model:</label>
             <select id="model-select">
                  <option value="claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
-                <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
-                <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
-                <option value="o4-mini">OpenAI o4-mini</option>
-                <option value="openrouter:anthropic/claude-3.5-haiku">3.5 haiku</option>
-                <option value="openrouter:google/gemini-2.5-pro-preview-03-25">Gemini 2.5 pro</option>            
-                <option value="openrouter:openai/o4-mini-high"> OpenAI o4-mini-high</option>
-                <option value="openrouter:openai/o3">OpenAI O3</option>
-                <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-                <option value="gpt-4.1">OpenAI GPT-4.1</option>
+                 <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                 <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
+                 <option value="o4-mini">OpenAI o4-mini</option>
+                 <option value="openrouter:anthropic/claude-3.5-haiku">3.5 haiku</option>
+                 <option value="openrouter:google/gemini-2.5-pro-preview-03-25">Gemini 2.5 pro</option>
+                 <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
+                 <option value="openrouter:openai/o3">OpenAI O3</option>
+                 <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                 <option value="gpt-4.1">OpenAI GPT-4.1</option>
             </select>
         </div>
         <div class="chat-history" id="chat-history">
@@ -385,8 +385,14 @@
             console.log(`Sending to puter.ai (${selectedModel}):`, prompt);
 
             try {
-                // Call puter.ai.chat with the single prompt string and model option
-                const response = await puter.ai.chat(prompt, { model: selectedModel });
+                // *** FIX APPLIED HERE ***
+                // Call puter.ai.chat with the prompt, model option, and max_tokens option
+                const response = await puter.ai.chat(prompt, {
+                    model: selectedModel,
+                    max_tokens: 8192 // Requesting a higher token limit
+                });
+                // *** END FIX ***
+
 
                 // --- MODIFIED RESPONSE HANDLING ---
                 console.log('Raw API Response:', JSON.stringify(response, null, 2)); // Log raw for debugging
@@ -433,7 +439,7 @@
                 // 4. Add error message to local history (if not already added due to invalid structure)
                 // Check if the last message is already an error for this interaction to avoid duplicates
                  const lastMessage = chatMessages[chatMessages.length - 1];
-                 if (lastMessage?.role !== 'error' || lastMessage?.content.indexOf(selectedModel) === -1) {
+                 if (lastMessage?.role !== 'error' || !lastMessage?.content.includes(selectedModel.split('/').pop() || 'model')) {
                      chatMessages.push({
                         role: 'error',
                         content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error'}. Please check the console for more details.`
