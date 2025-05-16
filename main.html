@@ -10,25 +10,26 @@
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
     <style>
         :root {
-            --user-bg: #e1f5fe; /* Light blue for user */
-            --assistant-bg: #f1f1f1; /* Light grey for AI */
-            --error-bg: #ffebee;
-            --error-text: #c62828;
-            --border-color: #e0e0e0;
-            --input-bg: #ffffff;
-            --text-color: #333;
-            --container-bg: #ffffff;
-            --body-bg-start: #f0f2f5;
-            --body-bg-end: #e6e9ed;
-            --button-gradient-start: #007bff;
+            /* Dark Mode Theme */
+            --user-bg: #2a3b4d; /* Darker slate blue for user messages */
+            --assistant-bg: #303030; /* Dark grey for AI messages */
+            --error-bg: #442222; /* Dark red background for error messages */
+            --error-text: #ff9999; /* Light red text for error messages */
+            --border-color: #454545; /* Mid-dark grey border */
+            --input-bg: #1c1c1c; /* Very dark grey for input fields */
+            --text-color: #e0e0e0; /* Light grey text for readability */
+            --container-bg: #0d0d0d; /* Extremely dark grey, near black for main container */
+            --body-bg-start: #000000; /* Black body background start */
+            --body-bg-end: #000000;   /* Black body background end */
+            --button-gradient-start: #007bff; /* Primary blue for action button */
             --button-gradient-end: #0056b3;
             --button-hover-start: #0056b3;
             --button-hover-end: #004085;
-            --button-disabled-bg: #cccccc;
-            --spinner-color: #007bff;
-            --code-bg: #2d2d2d; /* Dark background for code blocks */
-            --code-text: #f1f1f1; /* Light text for code blocks */
-            --code-border: #444;
+            --button-disabled-bg: #333333; /* Dark grey for disabled button */
+            --spinner-color: #007bff; /* Bright blue spinner for visibility */
+            --code-bg: #1e1e1e; /* Dark background for code blocks */
+            --code-text: #d0d0d0; /* Light grey for code text */
+            --code-border: #383838; /* Border for code blocks */
         }
 
         body {
@@ -41,6 +42,7 @@
             margin: 0;
             padding: 20px 0;
             box-sizing: border-box;
+            color: var(--text-color); /* Default text color for the body */
         }
 
         .container {
@@ -50,7 +52,7 @@
             max-height: 700px;
             background-color: var(--container-bg);
             border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark background */
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -74,19 +76,24 @@
             display: block;
             margin-bottom: 5px;
             font-size: 0.9em;
-            color: #555;
+            color: #b0b0b0; /* Lighter grey for labels in dark mode */
         }
 
         select {
             width: 100%;
             padding: 10px 12px;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             font-size: 14px;
             box-sizing: border-box;
             cursor: pointer;
             background-color: var(--input-bg);
+            color: var(--text-color); /* Text color for select */
             transition: border-color 0.2s ease;
+        }
+        select option {
+            background-color: var(--input-bg);
+            color: var(--text-color);
         }
         select:focus {
             outline: none;
@@ -136,8 +143,8 @@
             top: -14px;
             left: 10px;
             font-size: 0.7em;
-            color: #777;
-            background-color: rgba(255, 255, 255, 0.8);
+            color: #b0b0b0;
+            background-color: rgba(40, 40, 40, 0.85);
             padding: 1px 5px;
             border-radius: 3px;
             z-index: 1;
@@ -150,11 +157,10 @@
         .message.error {
             background-color: var(--error-bg);
             color: var(--error-text);
-            border: 1px solid #ef9a9a;
+            border: 1px solid var(--error-text);
             align-self: flex-start;
         }
 
-        /* --- Markdown Styling --- */
         .message.assistant p:last-child { margin-bottom: 0; }
         .message.assistant p { margin-bottom: 0.75em; }
         .message.assistant pre {
@@ -171,14 +177,14 @@
         }
         .message.assistant code { font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
         .message.assistant :not(pre) > code {
-            background-color: rgba(0, 0, 0, 0.06);
+            background-color: rgba(200, 200, 200, 0.15);
             padding: 2px 5px;
             border-radius: 4px;
             font-size: 0.9em;
+            color: var(--code-text);
         }
         .message.assistant ul, .message.assistant ol { padding-left: 25px; margin: 10px 0; }
         .message.assistant li { margin-bottom: 5px; }
-        /* --- End Markdown Styling --- */
 
         .input-area {
             display: flex;
@@ -186,14 +192,14 @@
             border-top: 1px solid var(--border-color);
             gap: 10px;
             align-items: flex-end;
-            background-color: #f9f9f9;
+            background-color: #0a0a0a;
         }
 
         textarea {
             flex-grow: 1;
             padding: 10px 12px;
             border-radius: 8px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             font-size: 15px;
             resize: none;
             box-sizing: border-box;
@@ -202,12 +208,16 @@
             overflow-y: auto;
             line-height: 1.4;
             background-color: var(--input-bg);
+            color: var(--text-color);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        textarea::placeholder {
+            color: #777;
         }
         textarea:focus {
              outline: none;
              border-color: var(--button-gradient-start);
-             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
         button {
@@ -222,27 +232,28 @@
             transition: background 0.3s ease, transform 0.1s ease, box-shadow 0.2s ease;
             height: 44px;
             flex-shrink: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         button:hover {
             background: linear-gradient(135deg, var(--button-hover-start), var(--button-hover-end));
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
         }
         button:active {
              transform: scale(0.98);
-             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
         button:disabled {
             background: var(--button-disabled-bg);
+            color: #888888;
             cursor: not-allowed;
             box-shadow: none;
         }
 
         .loading {
-            display: none; /* Hidden by default */
+            display: none;
             text-align: center;
             padding: 0 5px 0 5px;
-            color: #555;
+            color: #b0b0b0;
             align-items: center;
             justify-content: flex-start;
             gap: 8px;
@@ -252,7 +263,7 @@
         }
 
         .spinner {
-            border: 3px solid rgba(0, 0, 0, 0.1);
+            border: 3px solid rgba(255, 255, 255, 0.1);
             width: 18px;
             height: 18px;
             border-radius: 50%;
@@ -272,29 +283,17 @@
         <div class="controls">
              <label for="model-select">Select AI Model:</label>
             <select id="model-select">
-                 <option value="claude-3-5-sonnet">Anthropic Claude 3.5 Sonnet</option>
                  <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
                  <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
                  <option value="openrouter:openai/o4-mini">OpenAI o4-mini</option>
                  <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
                  <option value="openrouter:openai/o3">OpenAI O3</option>
-                 <option value="openrouter:google/gemini-2.5-pro-preview-03-25">Gemini 2.5 pro</option>
-                 <option value = "openrouter:anthropic/claude-3.5-haiku-20241022"> haiku 3.5 </option>
                  <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-                 <option value="deepseek-chat">Deepseek v3</option>
-                 <option value="openrouter:inflection/inflection-3-productivity">inflection</option>
-                 <option value="openrouter:x-ai/grok-3-mini-beta">Grok mini </option>
-                 <option value="openrouter:x-ai/grok-3-beta">Grok 3 </option>
-                 <option value="gpt-4o">OpenAI GPT-4o</option>
+                 <option value="openrouter:openai/codex-mini">codex</option>
                  <option value="gpt-4.1">OpenAI GPT-4.1</option>
             </select>
         </div>
         <div class="chat-history" id="chat-history">
-             <!-- Initial system message -->
-             <div class="message assistant">
-                 <span class="model-label">System</span>
-                 <span>Hello! Select a model and ask me anything. Try asking for code or a list!</span>
-            </div>
         </div>
 
         <div class="input-area">
@@ -314,46 +313,39 @@
         const modelSelect = document.getElementById('model-select');
         const loadingDiv = document.getElementById('loading');
 
-        // Store conversation history { role: 'user' | 'assistant' | 'error' | 'system', content: string, model?: string }
         let chatMessages = [
             { role: 'system', content: 'Hello! Select a model and ask me anything. Try asking for code or a list!', model: 'System' }
         ];
 
-        // Function to render messages from chatMessages array
         function renderChatHistory(newMessageAdded = false) {
-            const isScrolledToBottom = chatHistory.scrollHeight - chatHistory.clientHeight <= chatHistory.scrollTop + 10; // Tolerance
+            const isScrolledToBottom = chatHistory.scrollHeight - chatHistory.clientHeight <= chatHistory.scrollTop + 10;
 
-            chatHistory.innerHTML = ''; // Clear existing messages before re-rendering
+            chatHistory.innerHTML = '';
             chatMessages.forEach((msg, index) => {
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message', msg.role);
 
                 let labelHtml = '';
-                // Display model label for assistant/system, User label for user
                 if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
-                    const modelName = DOMPurify.sanitize(msg.model.includes(':') ? msg.model.split(':').pop().split('/').pop() : msg.model.split('/').pop()); // Handle openrouter format too
+                    const modelName = DOMPurify.sanitize(msg.model.includes(':') ? msg.model.split(':').pop().split('/').pop() : msg.model.split('/').pop());
                     labelHtml = `<span class="model-label">${modelName}</span>`;
                 } else if (msg.role === 'user') {
                      labelHtml = `<span class="model-label">User</span>`;
                 }
 
-                // Render content based on role
                 if (msg.role === 'assistant') {
                     try {
-                        // Use marked and DOMPurify for assistant messages
                         const rawHtml = marked.parse(msg.content || '');
                         const sanitizedHtml = DOMPurify.sanitize(rawHtml);
                         messageElement.innerHTML = labelHtml + sanitizedHtml;
                     } catch (parseError) {
                         console.error("Markdown parsing/sanitizing error:", parseError);
-                        // Fallback to plain text rendering on error
                         const contentElement = document.createElement('span');
                         contentElement.textContent = msg.content || '';
                         messageElement.innerHTML = labelHtml;
                         messageElement.appendChild(contentElement);
                     }
                 } else {
-                    // Render user, system, or error messages as plain text
                     const contentElement = document.createElement('span');
                     contentElement.textContent = msg.content || '';
                     messageElement.innerHTML = labelHtml;
@@ -362,143 +354,128 @@
                 chatHistory.appendChild(messageElement);
             });
 
-            // Scroll to bottom if it was already there or if a new message was added
             if (isScrolledToBottom || newMessageAdded) {
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
         }
 
-        // Function to handle sending message and receiving response
         async function sendMessage() {
-            const prompt = promptInput.value.trim();
+            const currentPromptText = promptInput.value.trim(); // Use a different name for the text from input
             const selectedModel = modelSelect.value;
 
-            if (!prompt) return; // Do nothing if input is empty
+            if (!currentPromptText) return;
 
-            // 1. Add user message to local history and render
-            chatMessages.push({ role: 'user', content: prompt });
-            renderChatHistory(true); // Render immediately and scroll
+            chatMessages.push({ role: 'user', content: currentPromptText });
+            renderChatHistory(true);
 
-            // 2. Clear input, disable controls, show loading
             promptInput.value = '';
             promptInput.disabled = true;
             sendButton.disabled = true;
             modelSelect.disabled = true;
             loadingDiv.style.display = 'flex';
-            adjustTextareaHeight(); // Reset height after clearing
+            adjustTextareaHeight();
 
-            console.log(`Sending to puter.ai (${selectedModel}):`, prompt);
+            console.log(`Sending to puter.ai (${selectedModel}):`, currentPromptText);
 
             try {
-                // *** FIX APPLIED HERE ***
-                // Call puter.ai.chat with the prompt, model option, and max_tokens option
-                const response = await puter.ai.chat(prompt, {
+                // *** REVERTED API CALL STRUCTURE TO MATCH ORIGINAL WORKING CODE ***
+                // The first argument is the prompt string, the second is the options object.
+                const response = await puter.ai.chat(currentPromptText, {
                     model: selectedModel,
-                    max_tokens: 8192 // Requesting a higher token limit
+                    max_tokens: 8192
                 });
-                // *** END FIX ***
+                // *** END REVERTED API CALL STRUCTURE ***
 
-
-                // --- MODIFIED RESPONSE HANDLING ---
-                console.log('Raw API Response:', JSON.stringify(response, null, 2)); // Log raw for debugging
+                console.log('Raw API Response:', JSON.stringify(response, null, 2));
                 let responseContent = '';
+                let successfullyParsed = false; // Flag to ensure we only add assistant message if content is valid
 
                 if (response && response.message && response.message.content) {
-                    // Check for Claude structure (content is an array with a text property)
                     if (Array.isArray(response.message.content) && response.message.content.length > 0 && typeof response.message.content[0].text === 'string') {
                         responseContent = response.message.content[0].text;
+                        successfullyParsed = true;
                         console.log('Extracted content (Claude format):', responseContent);
-                    // Check for the other common structure (content is a direct string)
                     } else if (typeof response.message.content === 'string') {
                         responseContent = response.message.content;
+                        successfullyParsed = true;
                         console.log('Extracted content (String format):', responseContent);
-                    // Handle cases where content exists but is neither expected format
                     } else {
                         console.warn('Unexpected content type inside response.message.content:', typeof response.message.content, response.message.content);
                         responseContent = `Received response, but content format is unexpected. Check console.`;
                     }
                 } else {
-                    // Handle cases where the expected response structure is missing
                     console.warn('Unexpected API response structure. Expected response.message.content path.', response);
                     responseContent = response ? `Received unexpected response format. Check console.` : 'Received empty or invalid response.';
-                    // If responseContent is still empty here, create an error message
-                    if (!responseContent) {
-                         chatMessages.push({
-                            role: 'error',
-                            content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: Received invalid or empty response structure. Please check the console.`
-                        });
-                         // Skip adding the empty 'assistant' message below
-                         throw new Error("Invalid response structure"); // Prevent adding empty assistant message
-                    }
                 }
-                // --- END MODIFIED RESPONSE HANDLING ---
 
-                // 3. Add assistant response to local history (only if content was successfully extracted)
-                 if (responseContent) { // Only add if we got some content
+                if (successfullyParsed && responseContent) {
                     chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
-                 }
-
-
-            } catch (error) {
-                console.error("API Error/Processing Error:", error);
-                // 4. Add error message to local history (if not already added due to invalid structure)
-                // Check if the last message is already an error for this interaction to avoid duplicates
-                 const lastMessage = chatMessages[chatMessages.length - 1];
-                 if (lastMessage?.role !== 'error' || !lastMessage?.content.includes(selectedModel.split('/').pop() || 'model')) {
+                } else {
+                    // If parsing failed, or responseContent is an error message string from the logic above,
+                    // or if the response was truly empty/invalid leading to an empty/error string in responseContent.
+                    // We will push an 'error' role message to the chat for better visibility.
+                    let errorMessage = `Error interacting with ${selectedModel.split('/').pop() || 'model'}: `;
+                    if (!response && !responseContent) { // Truly empty/invalid response object from API
+                        errorMessage += `Received invalid or empty response object. Please check the console.`;
+                    } else { // Includes cases where responseContent was set to an error string by parsing logic
+                        errorMessage += `${responseContent || 'Failed to parse response content or unknown issue.'} Please check the console.`;
+                    }
                      chatMessages.push({
                         role: 'error',
-                        content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error'}. Please check the console for more details.`
+                        content: errorMessage
                     });
-                 }
+                }
+
+            } catch (error) { // This catch block handles network errors or other exceptions not related to response parsing itself
+                console.error("API Error/Processing Error (Outer Catch):", error);
+                const lastMessage = chatMessages[chatMessages.length - 1];
+                // Avoid adding duplicate error messages if an error was already pushed by the response parsing logic
+                if (!(lastMessage?.role === 'error' && lastMessage?.content.includes(selectedModel.split('/').pop() || 'model'))) {
+                     chatMessages.push({
+                        role: 'error',
+                        content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error (e.g., network issue)'}. Please check the console for more details.`
+                    });
+                }
             } finally {
-                // 5. Re-enable inputs, hide loading, render final state, focus input
                 promptInput.disabled = false;
                 sendButton.disabled = false;
                 modelSelect.disabled = false;
                 loadingDiv.style.display = 'none';
-                renderChatHistory(true); // Render final state including response/error and scroll
-                promptInput.focus(); // Return focus to input field
+                renderChatHistory(true);
+                promptInput.focus();
             }
         }
 
-        // --- Textarea Auto-Resize ---
         function adjustTextareaHeight() {
-            promptInput.style.height = 'auto'; // Reset height to get accurate scrollHeight
+            promptInput.style.height = 'auto';
             let scrollHeight = promptInput.scrollHeight;
             const style = window.getComputedStyle(promptInput);
             const borderTop = parseInt(style.borderTopWidth, 10) || 0;
             const borderBottom = parseInt(style.borderBottomWidth, 10) || 0;
-
-            // Calculate the required height including border
             const requiredHeight = scrollHeight + borderTop + borderBottom;
-            const maxHeight = parseInt(style.maxHeight, 10) || 150; // Use default if maxHeight not set
+            const maxHeight = parseInt(style.maxHeight, 10) || 150;
 
             if (requiredHeight > maxHeight) {
-                 // If content height exceeds max height, set to max and enable scroll
                  promptInput.style.height = `${maxHeight}px`;
                  promptInput.style.overflowY = 'auto';
             } else {
-                // Otherwise, set height to content height and hide scroll
                 promptInput.style.height = `${requiredHeight}px`;
                 promptInput.style.overflowY = 'hidden';
             }
         }
 
-        // --- Event Listeners ---
-        promptInput.addEventListener('input', adjustTextareaHeight); // Adjust height while typing
+        promptInput.addEventListener('input', adjustTextareaHeight);
         promptInput.addEventListener('keydown', (e) => {
-            // Send on Enter (but not Shift+Enter for new lines)
             if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // Prevent adding a newline
+                e.preventDefault();
                 sendMessage();
             }
         });
-        sendButton.addEventListener('click', sendMessage); // Send on button click
+        sendButton.addEventListener('click', sendMessage);
 
-        // --- Initial Setup ---
-        renderChatHistory(); // Render the initial system message
-        adjustTextareaHeight(); // Set initial textarea height
-        promptInput.focus(); // Focus the input field on page load
+        renderChatHistory(true); // Render initial system message and ensure scroll
+        adjustTextareaHeight();
+        promptInput.focus();
 
     </script>
 </body>
