@@ -4,32 +4,30 @@
     <title>Chat AI Model Explorer</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://db.onlinewebfonts.com/c/4e97278c347e41ce57cf565b0f31390e?family=Dyslexie+Regular" rel="stylesheet" type="text/css" />
-    <!-- CDN for marked -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- CDN for DOMPurify -->
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
     <style>
         :root {
-            /* Dark Mode Theme */
-            --user-bg: #2a3b4d; /* Darker slate blue for user messages */
-            --assistant-bg: #303030; /* Dark grey for AI messages */
-            --error-bg: #442222; /* Dark red background for error messages */
-            --error-text: #ff9999; /* Light red text for error messages */
-            --border-color: #454545; /* Mid-dark grey border */
-            --input-bg: #1c1c1c; /* Very dark grey for input fields */
-            --text-color: #e0e0e0; /* Light grey text for readability */
-            --container-bg: #0d0d0d; /* Extremely dark grey, near black for main container */
-            --body-bg-start: #000000; /* Black body background start */
-            --body-bg-end: #000000;   /* Black body background end */
-            --button-gradient-start: #007bff; /* Primary blue for action button */
+            --user-bg: #2a3b4d;
+            --assistant-bg: #303030;
+            --error-bg: #442222;
+            --error-text: #ff9999;
+            --border-color: #454545;
+            --input-bg: #1c1c1c;
+            --text-color: #e0e0e0;
+            --container-bg: #0d0d0d;
+            --body-bg-start: #000000;
+            --body-bg-end: #000000;
+            --button-gradient-start: #007bff;
             --button-gradient-end: #0056b3;
             --button-hover-start: #0056b3;
             --button-hover-end: #004085;
-            --button-disabled-bg: #333333; /* Dark grey for disabled button */
-            --spinner-color: #007bff; /* Bright blue spinner for visibility */
-            --code-bg: #1e1e1e; /* Dark background for code blocks */
-            --code-text: #d0d0d0; /* Light grey for code text */
-            --code-border: #383838; /* Border for code blocks */
+            --button-disabled-bg: #333333;
+            --spinner-color: #007bff;
+            --code-bg: #1e1e1e;
+            --code-text: #d0d0d0;
+            --code-border: #383838;
+            --controls-panel-transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Adjusted for bouncier feel */
         }
 
         body {
@@ -42,7 +40,7 @@
             margin: 0;
             padding: 20px 0;
             box-sizing: border-box;
-            color: var(--text-color); /* Default text color for the body */
+            color: var(--text-color);
         }
 
         .container {
@@ -52,31 +50,147 @@
             max-height: 700px;
             background-color: var(--container-bg);
             border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); /* Adjusted shadow for dark background */
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* Important for collapsing panel */
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px; /* Match h1 padding */
+            margin: 20px 0 0 0; /* Adjust margins */
+            position: relative; /* For absolute positioning of button if needed */
         }
 
         h1 {
             color: var(--text-color);
-            text-align: center;
-            margin: 20px 0 15px 0;
+            text-align: left; /* Align to left for button placement */
+            margin: 0; /* Removed top/bottom margin from h1 itself */
             font-weight: 600;
             font-size: 1.5em;
-            padding: 0 20px;
+            flex-grow: 1;
         }
 
-        .controls {
-            padding: 0 30px 15px 30px;
-            border-bottom: 1px solid var(--border-color);
+        #clear-configure-button {
+            background: var(--assistant-bg);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            transition: background-color 0.2s, transform 0.2s, opacity 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px) scale(0.95);
         }
+        #clear-configure-button.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+        #clear-configure-button:hover {
+            background-color: #3f3f3f;
+            transform: translateY(0) scale(1.03);
+        }
+        #clear-configure-button svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+
+
+        .controls-panel {
+            padding: 15px 30px 15px 30px; /* Add top padding back */
+            border-bottom: 1px solid var(--border-color);
+            transition: var(--controls-panel-transition);
+            max-height: 300px; /* Adjust as needed for content, should be larger than actual height */
+            opacity: 1;
+            overflow: hidden;
+            margin-bottom: 0; /* Initial margin */
+        }
+        .controls-panel.collapsed {
+            max-height: 0;
+            opacity: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-bottom-width: 0;
+            margin-bottom: -1px; /* To prevent double border with chat history on expand */
+        }
+
+
+        .controls-row {
+            margin-bottom: 15px;
+        }
+        .controls-row:last-child {
+            margin-bottom: 0;
+        }
+         .system-prompt-controls-area {
+            margin-top: 15px;
+        }
+
+        #open-system-prompt-modal-button {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.2s, border-color 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        #open-system-prompt-modal-button:hover {
+            background-color: #2c2c2c;
+            border-color: var(--button-gradient-start);
+        }
+        #open-system-prompt-modal-button:disabled {
+            background: var(--button-disabled-bg) !important;
+            color: #888888 !important;
+            cursor: not-allowed;
+            border-color: var(--border-color) !important;
+        }
+        #open-system-prompt-modal-button:disabled #system-prompt-status-indicator {
+            background-color: #555 !important;
+            color: #999 !important;
+        }
+
+
+        #system-prompt-status-indicator {
+            font-size: 0.85em;
+            padding: 3px 8px;
+            border-radius: 10px;
+            transition: background-color 0.3s, color 0.3s;
+            margin-left: 5px;
+        }
+        #system-prompt-status-indicator.inactive {
+            background-color: var(--assistant-bg);
+            color: #999;
+        }
+        #system-prompt-status-indicator.active {
+            background-color: var(--button-gradient-start);
+            color: white;
+            font-weight: 500;
+        }
+
 
         label {
             display: block;
             margin-bottom: 5px;
             font-size: 0.9em;
-            color: #b0b0b0; /* Lighter grey for labels in dark mode */
+            color: #b0b0b0;
         }
 
         select {
@@ -88,7 +202,7 @@
             box-sizing: border-box;
             cursor: pointer;
             background-color: var(--input-bg);
-            color: var(--text-color); /* Text color for select */
+            color: var(--text-color);
             transition: border-color 0.2s ease;
         }
         select option {
@@ -110,7 +224,7 @@
         }
 
         .message {
-            padding: 12px 15px;
+            padding: 10px 15px; /* Adjusted padding */
             border-radius: 10px;
             max-width: 90%;
             word-wrap: break-word;
@@ -119,7 +233,63 @@
             color: var(--text-color);
             position: relative;
             animation: fadeIn 0.4s ease-out;
+            display: flex; /* For copy button alignment */
+            flex-direction: column; /* Stack label, content, copy button */
         }
+
+        .message-header { /* To contain model label */
+            position: relative;
+            height: 0; /* Will be effectively positioned by label */
+        }
+
+        .message .model-label {
+            position: absolute;
+            top: -14px; /* Position above the bubble */
+            left: 10px;
+            font-size: 0.7em;
+            color: #b0b0b0;
+            background-color: rgba(40, 40, 40, 0.85);
+            padding: 1px 5px;
+            border-radius: 3px;
+            z-index: 1;
+        }
+        .message.user .model-label {
+            left: auto;
+            right: 10px;
+        }
+
+        .message-content-wrapper {
+            padding-top: 8px; /* Space for label if it overflows a bit */
+             flex-grow: 1;
+        }
+
+
+        .copy-message-button {
+            background: none;
+            border: none;
+            color: #888;
+            cursor: pointer;
+            font-size: 0.9em; /* Adjust size of emoji/icon */
+            padding: 2px 4px;
+            border-radius: 4px;
+            opacity: 0;
+            transition: opacity 0.2s ease, color 0.2s, transform 0.1s;
+            position: absolute; /* Position within the message bubble */
+            bottom: 5px;
+            right: 5px;
+            line-height: 1;
+        }
+        .message:hover .copy-message-button {
+            opacity: 1;
+        }
+        .copy-message-button:hover {
+            color: var(--button-gradient-start);
+            transform: scale(1.1);
+        }
+         .copy-message-button.copied {
+            color: var(--button-gradient-start); /* Or a green color */
+         }
+
 
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(5px); }
@@ -138,22 +308,6 @@
             border-bottom-left-radius: 2px;
         }
 
-         .message .model-label {
-            position: absolute;
-            top: -14px;
-            left: 10px;
-            font-size: 0.7em;
-            color: #b0b0b0;
-            background-color: rgba(40, 40, 40, 0.85);
-            padding: 1px 5px;
-            border-radius: 3px;
-            z-index: 1;
-        }
-         .message.user .model-label {
-             left: auto;
-             right: 10px;
-         }
-
         .message.error {
             background-color: var(--error-bg);
             color: var(--error-text);
@@ -161,8 +315,9 @@
             align-self: flex-start;
         }
 
-        .message.assistant p:last-child { margin-bottom: 0; }
-        .message.assistant p { margin-bottom: 0.75em; }
+        .message.assistant p:last-child, .message.user p:last-child { margin-bottom: 0; }
+        .message.assistant p, .message.user p { margin-bottom: 0.75em; }
+
         .message.assistant pre {
             background-color: var(--code-bg);
             color: var(--code-text);
@@ -195,7 +350,7 @@
             background-color: #0a0a0a;
         }
 
-        textarea {
+        textarea#prompt-input {
             flex-grow: 1;
             padding: 10px 12px;
             border-radius: 8px;
@@ -211,16 +366,14 @@
             color: var(--text-color);
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
-        textarea::placeholder {
-            color: #777;
-        }
-        textarea:focus {
+        textarea#prompt-input::placeholder { color: #777; }
+        textarea#prompt-input:focus {
              outline: none;
              border-color: var(--button-gradient-start);
              box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
-        button {
+        button#send-button { /* Target specifically send button if needed */
             padding: 10px 18px;
             border-radius: 8px;
             border: none;
@@ -234,15 +387,15 @@
             flex-shrink: 0;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-        button:hover {
+        button#send-button:hover {
             background: linear-gradient(135deg, var(--button-hover-start), var(--button-hover-end));
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
         }
-        button:active {
+        button#send-button:active {
              transform: scale(0.98);
              box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
-        button:disabled {
+        button#send-button:disabled {
             background: var(--button-disabled-bg);
             color: #888888;
             cursor: not-allowed;
@@ -275,23 +428,102 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.65); display: flex;
+            justify-content: center; align-items: center; z-index: 1000;
+            opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+        }
+        .modal-overlay.visible { opacity: 1; visibility: visible; transition-delay: 0s; }
+
+        .modal-content-box {
+            background-color: var(--container-bg); border: 1px solid var(--border-color);
+            padding: 25px; border-radius: 10px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            width: 90%; max-width: 600px; display: flex; flex-direction: column; gap: 20px;
+            transform: scale(0.9) translateY(-20px); transition: transform 0.25s ease, opacity 0.25s ease; opacity: 0;
+        }
+        .modal-overlay.visible .modal-content-box { transform: scale(1) translateY(0); opacity: 1; }
+
+        .modal-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+        }
+        .modal-header h2 { margin: 0; font-size: 1.4em; color: var(--text-color); font-weight: 500; }
+        .modal-close-icon {
+            background: none; border: none; color: var(--text-color); font-size: 1.8em;
+            cursor: pointer; padding: 0 5px; line-height: 1; transition: color 0.2s;
+        }
+        .modal-close-icon:hover { color: var(--button-gradient-start); }
+
+        #modal-system-prompt-textarea {
+            width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border-color);
+            font-size: 15px; box-sizing: border-box; background-color: var(--input-bg);
+            color: var(--text-color); resize: vertical; min-height: 120px; max-height: 300px;
+            line-height: 1.5; font-family: 'Dyslexie Regular', sans-serif;
+        }
+        #modal-system-prompt-textarea:focus {
+            outline: none; border-color: var(--button-gradient-start); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+        #modal-system-prompt-textarea::placeholder { color: #777; }
+
+        .modal-actions {
+            display: flex; justify-content: flex-end; align-items: center; gap: 12px;
+            padding-top: 15px; border-top: 1px solid var(--border-color);
+        }
+        .modal-actions button { padding: 9px 18px; font-size: 0.95em; height: auto; box-shadow: none; }
+        .modal-actions button.secondary {
+            background: var(--assistant-bg); border: 1px solid var(--border-color); color: var(--text-color);
+        }
+        .modal-actions button.secondary:hover { background: #3f3f3f; border-color: #555; }
+        #copy-modal-system-prompt-button, #clear-modal-system-prompt-button {
+            margin-right: auto; background: var(--user-bg); border: 1px solid var(--border-color);
+        }
+         #clear-modal-system-prompt-button { margin-right: 0; }
+        #copy-modal-system-prompt-button:hover, #clear-modal-system-prompt-button:hover { background: #3a4f63; }
+
+        #copy-feedback-popup {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background-color: var(--button-gradient-start); color: white; padding: 12px 25px;
+            border-radius: 6px; z-index: 1001; opacity: 0;
+            transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none;
+            font-size: 0.9em; box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+        }
+        #copy-feedback-popup.visible { opacity: 1; transform: translateX(-50%) translateY(-10px); }
+
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>AI Model Explorer</h1>
-        <div class="controls">
-             <label for="model-select">Select AI Model:</label>
-            <select id="model-select">
-                 <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
-                 <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
-                 <option value="openrouter:openai/o4-mini">OpenAI o4-mini</option>
-                 <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
-                 <option value="openrouter:openai/o3">OpenAI O3</option>
-                 <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-                 <option value="openrouter:openai/codex-mini">codex</option>
-                 <option value="gpt-4.1">OpenAI GPT-4.1</option>
-            </select>
+        <div class="main-header">
+            <h1>AI Model Explorer</h1>
+            <button id="clear-configure-button" title="Clear Chat & Edit Configuration">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.465 8.655c-.293-.293-.638-.44-.983-.44h-2.122c-.346-1.092-.832-2.103-1.45-3.035a.989.989 0 0 0-.805-.405.989.989 0 0 0-.805.405c-.618.932-1.104 1.943-1.45 3.035H9.5c-.345 0-.69.147-.983.44s-.44.638-.44.983v2.122c-1.092.346-2.103.832-3.035 1.45a.989.989 0 0 0-.405.805.989.989 0 0 0 .405.805c.932.618 1.943 1.104 3.035 1.45v2.122c0 .345.147.69.44.983s.638.44.983.44h2.122c.346 1.092.832 2.103 1.45 3.035a.989.989 0 0 0 .805.405.989.989 0 0 0 .805-.405c.618-.932 1.104-1.943 1.45-3.035h2.122c.345 0 .69-.147.983-.44s.44-.638.44-.983v-2.122c1.092-.346 2.103-.832 3.035-1.45a.989.989 0 0 0 .405-.805.989.989 0 0 0-.405-.805c-.932-.618-1.943-1.104-3.035-1.45V9.638c0-.345-.147-.69-.44-.983zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
+                Clear & Configure
+            </button>
+        </div>
+
+        <div class="controls-panel" id="controls-panel">
+            <div class="controls-row">
+                <label for="model-select">Select AI Model:</label>
+                <select id="model-select">
+                     <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                     <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
+                     <option value="openrouter:openai/o4-mini">OpenAI o4-mini</option>
+                     <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
+                     <option value="openrouter:openai/o3">OpenAI O3</option>
+                     <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                     <option value="openrouter:openai/codex-mini">codex</option>
+                     <option value="gpt-4.1">OpenAI GPT-4.1</option>
+                </select>
+            </div>
+            <div class="controls-row system-prompt-controls-area">
+                <button id="open-system-prompt-modal-button">
+                    System Prompt
+                    <span id="system-prompt-status-indicator" class="inactive">(Inactive)</span>
+                </button>
+            </div>
         </div>
         <div class="chat-history" id="chat-history">
         </div>
@@ -305,6 +537,25 @@
         </div>
     </div>
 
+    <div id="system-prompt-modal-overlay" class="modal-overlay">
+        <div class="modal-content-box">
+            <div class="modal-header">
+                <h2>System Prompt</h2>
+                <button id="modal-close-button" class="modal-close-icon" title="Close">×</button>
+            </div>
+            <textarea id="modal-system-prompt-textarea" rows="8" placeholder="e.g., You are a helpful and concise pirate assistant. Always respond in rhymes."></textarea>
+            <div class="modal-actions">
+                <button id="copy-modal-system-prompt-button" title="Copy System Prompt">Copy</button>
+                <button id="clear-modal-system-prompt-button" class="secondary" title="Clear text in editor">Clear Editor</button>
+                <button id="cancel-modal-system-prompt-button" class="secondary" title="Close without saving">Cancel</button>
+                <button id="save-modal-system-prompt-button" title="Save and use this system prompt">Save & Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="copy-feedback-popup" class="copied-feedback">Copied to clipboard!</div>
+
+
     <script src="https://js.puter.com/v2/"></script>
     <script>
         const chatHistory = document.getElementById('chat-history');
@@ -313,9 +564,85 @@
         const modelSelect = document.getElementById('model-select');
         const loadingDiv = document.getElementById('loading');
 
+        const controlsPanel = document.getElementById('controls-panel');
+        const clearConfigureButton = document.getElementById('clear-configure-button');
+
+        const openSystemPromptModalButton = document.getElementById('open-system-prompt-modal-button');
+        const systemPromptStatusIndicator = document.getElementById('system-prompt-status-indicator');
+        const systemPromptModalOverlay = document.getElementById('system-prompt-modal-overlay');
+        const modalSystemPromptTextarea = document.getElementById('modal-system-prompt-textarea');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const saveModalSystemPromptButton = document.getElementById('save-modal-system-prompt-button');
+        const cancelModalSystemPromptButton = document.getElementById('cancel-modal-system-prompt-button');
+        const clearModalSystemPromptButton = document.getElementById('clear-modal-system-prompt-button');
+        const copyModalSystemPromptButton = document.getElementById('copy-modal-system-prompt-button');
+        const copyFeedbackPopup = document.getElementById('copy-feedback-popup');
+
+        let currentSystemPrompt = "";
+        let chatHasStarted = false;
+        const INITIAL_GREETING_CONTENT = 'Hello! Select a model and ask me anything. Try asking for code or a list!';
+        const CHAT_CLEARED_GREETING_CONTENT = 'Chat cleared. Configure model & system prompt, then ask away!';
+
+
         let chatMessages = [
-            { role: 'system', content: 'Hello! Select a model and ask me anything. Try asking for code or a list!', model: 'System' }
+            { role: 'system', content: INITIAL_GREETING_CONTENT, model: 'System' }
         ];
+
+        function updateSystemPromptIndicator() {
+            if (currentSystemPrompt) {
+                systemPromptStatusIndicator.textContent = '(Active)';
+                systemPromptStatusIndicator.classList.remove('inactive');
+                systemPromptStatusIndicator.classList.add('active');
+            } else {
+                systemPromptStatusIndicator.textContent = '(Inactive)';
+                systemPromptStatusIndicator.classList.remove('active');
+                systemPromptStatusIndicator.classList.add('inactive');
+            }
+        }
+
+        function openSystemPromptModal() {
+            modalSystemPromptTextarea.value = currentSystemPrompt;
+            systemPromptModalOverlay.classList.add('visible');
+            modalSystemPromptTextarea.focus();
+        }
+
+        function closeSystemPromptModal() {
+            systemPromptModalOverlay.classList.remove('visible');
+        }
+
+        function handleSaveSystemPrompt() {
+            currentSystemPrompt = modalSystemPromptTextarea.value.trim();
+            updateSystemPromptIndicator();
+            closeSystemPromptModal();
+            console.log("System Prompt saved:", currentSystemPrompt || "None");
+        }
+
+        function handleClearSystemPromptInModal() {
+            modalSystemPromptTextarea.value = '';
+            modalSystemPromptTextarea.focus();
+        }
+
+        function showCopyFeedback(message = "Copied to clipboard!") {
+            copyFeedbackPopup.textContent = message;
+            copyFeedbackPopup.classList.add('visible');
+            setTimeout(() => {
+                copyFeedbackPopup.classList.remove('visible');
+            }, 2000);
+        }
+
+        function handleCopySystemPrompt() {
+            const textToCopy = modalSystemPromptTextarea.value;
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    showCopyFeedback();
+                }).catch(err => {
+                    console.error('Failed to copy system prompt: ', err);
+                    alert("Failed to copy. Please try manually.");
+                });
+            } else {
+                showCopyFeedback("Nothing to copy!");
+            }
+        }
 
         function renderChatHistory(newMessageAdded = false) {
             const isScrolledToBottom = chatHistory.scrollHeight - chatHistory.clientHeight <= chatHistory.scrollTop + 10;
@@ -325,32 +652,66 @@
                 const messageElement = document.createElement('div');
                 messageElement.classList.add('message', msg.role);
 
+                const messageHeader = document.createElement('div'); // For label
+                messageHeader.classList.add('message-header');
+
                 let labelHtml = '';
-                if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
+                 if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
                     const modelName = DOMPurify.sanitize(msg.model.includes(':') ? msg.model.split(':').pop().split('/').pop() : msg.model.split('/').pop());
                     labelHtml = `<span class="model-label">${modelName}</span>`;
                 } else if (msg.role === 'user') {
                      labelHtml = `<span class="model-label">User</span>`;
                 }
+                messageHeader.innerHTML = labelHtml;
+                messageElement.appendChild(messageHeader);
+
+                const contentWrapper = document.createElement('div');
+                contentWrapper.classList.add('message-content-wrapper');
 
                 if (msg.role === 'assistant') {
                     try {
                         const rawHtml = marked.parse(msg.content || '');
-                        const sanitizedHtml = DOMPurify.sanitize(rawHtml);
-                        messageElement.innerHTML = labelHtml + sanitizedHtml;
+                        contentWrapper.innerHTML = DOMPurify.sanitize(rawHtml);
                     } catch (parseError) {
                         console.error("Markdown parsing/sanitizing error:", parseError);
-                        const contentElement = document.createElement('span');
-                        contentElement.textContent = msg.content || '';
-                        messageElement.innerHTML = labelHtml;
-                        messageElement.appendChild(contentElement);
+                        contentWrapper.textContent = msg.content || '';
                     }
-                } else {
-                    const contentElement = document.createElement('span');
-                    contentElement.textContent = msg.content || '';
-                    messageElement.innerHTML = labelHtml;
-                    messageElement.appendChild(contentElement);
+                } else { // User, System, Error
+                    contentWrapper.textContent = msg.content || '';
                 }
+                messageElement.appendChild(contentWrapper);
+
+                // Add copy button for assistant and user messages (but not system/error for now)
+                if (msg.role === 'assistant' || msg.role === 'user') {
+                    const copyButton = document.createElement('button');
+                    copyButton.classList.add('copy-message-button');
+                    copyButton.innerHTML = '📄';
+                    copyButton.title = 'Copy message';
+                    copyButton.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const textToCopy = contentWrapper.textContent || "";
+                        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
+                            copyButton.innerHTML = '✅';
+                            copyButton.title = 'Copied!';
+                            copyButton.classList.add('copied');
+                            setTimeout(() => {
+                                copyButton.innerHTML = '📄';
+                                copyButton.title = 'Copy message';
+                                copyButton.classList.remove('copied');
+                            }, 1500);
+                        }).catch(err => {
+                            console.error('Failed to copy message: ', err);
+                            copyButton.innerHTML = '❌';
+                            copyButton.title = 'Copy failed';
+                             setTimeout(() => {
+                                copyButton.innerHTML = '📄';
+                                copyButton.title = 'Copy message';
+                            }, 1500);
+                        });
+                    });
+                    messageElement.appendChild(copyButton);
+                }
+
                 chatHistory.appendChild(messageElement);
             });
 
@@ -360,10 +721,16 @@
         }
 
         async function sendMessage() {
-            const currentPromptText = promptInput.value.trim(); // Use a different name for the text from input
+            const currentPromptText = promptInput.value.trim();
             const selectedModel = modelSelect.value;
 
             if (!currentPromptText) return;
+
+            if (!chatHasStarted) {
+                chatHasStarted = true;
+                controlsPanel.classList.add('collapsed');
+                clearConfigureButton.classList.add('visible');
+            }
 
             chatMessages.push({ role: 'user', content: currentPromptText });
             renderChatHistory(true);
@@ -372,74 +739,54 @@
             promptInput.disabled = true;
             sendButton.disabled = true;
             modelSelect.disabled = true;
+            openSystemPromptModalButton.disabled = true;
             loadingDiv.style.display = 'flex';
             adjustTextareaHeight();
 
-            console.log(`Sending to puter.ai (${selectedModel}):`, currentPromptText);
+            const apiMessagesForHistory = [];
+            if (currentSystemPrompt) {
+                apiMessagesForHistory.push({ role: 'system', content: currentSystemPrompt });
+            }
+
+            // Start from index 1 to skip initial greeting if it's still the first message array
+            // Or more robustly, filter for user/assistant roles from chatMessages
+            const historyToConsider = chatMessages.filter(m => m.role === 'user' || m.role === 'assistant');
+             // Take all but the last one (which is the current user prompt) for history
+            historyToConsider.slice(0, -1).forEach(msg => {
+                apiMessagesForHistory.push({ role: msg.role, content: msg.content });
+            });
+
+
+            console.log("API History Messages:", JSON.stringify(apiMessagesForHistory, null, 2));
 
             try {
-                // *** REVERTED API CALL STRUCTURE TO MATCH ORIGINAL WORKING CODE ***
-                // The first argument is the prompt string, the second is the options object.
-                const response = await puter.ai.chat(currentPromptText, {
-                    model: selectedModel,
-                    max_tokens: 8192
-                });
-                // *** END REVERTED API CALL STRUCTURE ***
+                const apiOptions = { model: selectedModel, max_tokens: 8192 };
+                if (apiMessagesForHistory.length > 0) apiOptions.messages = apiMessagesForHistory;
 
-                console.log('Raw API Response:', JSON.stringify(response, null, 2));
+                const response = await puter.ai.chat(currentPromptText, apiOptions);
                 let responseContent = '';
-                let successfullyParsed = false; // Flag to ensure we only add assistant message if content is valid
+                let successfullyParsed = false;
 
-                if (response && response.message && response.message.content) {
-                    if (Array.isArray(response.message.content) && response.message.content.length > 0 && typeof response.message.content[0].text === 'string') {
-                        responseContent = response.message.content[0].text;
-                        successfullyParsed = true;
-                        console.log('Extracted content (Claude format):', responseContent);
+                if (response?.message?.content) {
+                    if (Array.isArray(response.message.content) && response.message.content[0]?.text === 'string') {
+                        responseContent = response.message.content[0].text; successfullyParsed = true;
                     } else if (typeof response.message.content === 'string') {
-                        responseContent = response.message.content;
-                        successfullyParsed = true;
-                        console.log('Extracted content (String format):', responseContent);
-                    } else {
-                        console.warn('Unexpected content type inside response.message.content:', typeof response.message.content, response.message.content);
-                        responseContent = `Received response, but content format is unexpected. Check console.`;
-                    }
-                } else {
-                    console.warn('Unexpected API response structure. Expected response.message.content path.', response);
-                    responseContent = response ? `Received unexpected response format. Check console.` : 'Received empty or invalid response.';
-                }
+                        responseContent = response.message.content; successfullyParsed = true;
+                    } else { responseContent = `Unexpected content format. Check console.`; }
+                } else { responseContent = response ? `Unexpected response format. Check console.` : 'Empty/invalid response.'; }
 
                 if (successfullyParsed && responseContent) {
                     chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
                 } else {
-                    // If parsing failed, or responseContent is an error message string from the logic above,
-                    // or if the response was truly empty/invalid leading to an empty/error string in responseContent.
-                    // We will push an 'error' role message to the chat for better visibility.
-                    let errorMessage = `Error interacting with ${selectedModel.split('/').pop() || 'model'}: `;
-                    if (!response && !responseContent) { // Truly empty/invalid response object from API
-                        errorMessage += `Received invalid or empty response object. Please check the console.`;
-                    } else { // Includes cases where responseContent was set to an error string by parsing logic
-                        errorMessage += `${responseContent || 'Failed to parse response content or unknown issue.'} Please check the console.`;
-                    }
-                     chatMessages.push({
-                        role: 'error',
-                        content: errorMessage
-                    });
+                    chatMessages.push({ role: 'error', content: `Error with ${selectedModel.split('/').pop() || 'model'}: ${responseContent}` });
                 }
-
-            } catch (error) { // This catch block handles network errors or other exceptions not related to response parsing itself
-                console.error("API Error/Processing Error (Outer Catch):", error);
-                const lastMessage = chatMessages[chatMessages.length - 1];
-                // Avoid adding duplicate error messages if an error was already pushed by the response parsing logic
-                if (!(lastMessage?.role === 'error' && lastMessage?.content.includes(selectedModel.split('/').pop() || 'model'))) {
-                     chatMessages.push({
-                        role: 'error',
-                        content: `Error interacting with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown API Error (e.g., network issue)'}. Please check the console for more details.`
-                    });
-                }
+            } catch (error) {
+                chatMessages.push({ role: 'error', content: `API Error with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown error'}. Check console.` });
             } finally {
                 promptInput.disabled = false;
                 sendButton.disabled = false;
                 modelSelect.disabled = false;
+                openSystemPromptModalButton.disabled = false;
                 loadingDiv.style.display = 'none';
                 renderChatHistory(true);
                 promptInput.focus();
@@ -455,26 +802,51 @@
             const requiredHeight = scrollHeight + borderTop + borderBottom;
             const maxHeight = parseInt(style.maxHeight, 10) || 150;
 
-            if (requiredHeight > maxHeight) {
-                 promptInput.style.height = `${maxHeight}px`;
-                 promptInput.style.overflowY = 'auto';
-            } else {
-                promptInput.style.height = `${requiredHeight}px`;
-                promptInput.style.overflowY = 'hidden';
-            }
+            promptInput.style.height = `${Math.min(requiredHeight, maxHeight)}px`;
+            promptInput.style.overflowY = requiredHeight > maxHeight ? 'auto' : 'hidden';
         }
+
+        clearConfigureButton.addEventListener('click', () => {
+            chatMessages = [{ role: 'system', content: CHAT_CLEARED_GREETING_CONTENT, model: 'System' }];
+            currentSystemPrompt = "";
+            updateSystemPromptIndicator();
+            modalSystemPromptTextarea.value = ""; // Also clear modal's internal state
+            renderChatHistory(true);
+            promptInput.value = '';
+            adjustTextareaHeight();
+
+            controlsPanel.classList.remove('collapsed');
+            clearConfigureButton.classList.remove('visible');
+            chatHasStarted = false;
+
+            // Re-enable controls that might have been disabled by sendMessage()
+            promptInput.disabled = false;
+            sendButton.disabled = false;
+            modelSelect.disabled = false;
+            openSystemPromptModalButton.disabled = false;
+
+            promptInput.focus();
+        });
+
+        openSystemPromptModalButton.addEventListener('click', openSystemPromptModal);
+        modalCloseButton.addEventListener('click', closeSystemPromptModal);
+        cancelModalSystemPromptButton.addEventListener('click', closeSystemPromptModal);
+        saveModalSystemPromptButton.addEventListener('click', handleSaveSystemPrompt);
+        clearModalSystemPromptButton.addEventListener('click', handleClearSystemPromptInModal);
+        copyModalSystemPromptButton.addEventListener('click', handleCopySystemPrompt);
+        systemPromptModalOverlay.addEventListener('click', (e) => {
+            if (e.target === systemPromptModalOverlay) closeSystemPromptModal();
+        });
 
         promptInput.addEventListener('input', adjustTextareaHeight);
         promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage();
-            }
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
         });
         sendButton.addEventListener('click', sendMessage);
 
-        renderChatHistory(true); // Render initial system message and ensure scroll
+        renderChatHistory(true);
         adjustTextareaHeight();
+        updateSystemPromptIndicator();
         promptInput.focus();
 
     </script>
