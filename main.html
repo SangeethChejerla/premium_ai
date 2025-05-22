@@ -1,853 +1,1562 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Chat AI Model Explorer</title>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://db.onlinewebfonts.com/c/4e97278c347e41ce57cf565b0f31390e?family=Dyslexie+Regular" rel="stylesheet" type="text/css" />
+    <title>AI Chat Explorer Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/html.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+    <script src="https://js.puter.com/v2/"></script> <!-- Puter.js Library -->
     <style>
         :root {
-            --user-bg: #2a3b4d;
-            --assistant-bg: #303030;
-            --error-bg: #442222;
-            --error-text: #ff9999;
-            --border-color: #454545;
-            --input-bg: #1c1c1c;
-            --text-color: #e0e0e0;
-            --container-bg: #0d0d0d;
-            --body-bg-start: #000000;
-            --body-bg-end: #000000;
-            --button-gradient-start: #007bff;
-            --button-gradient-end: #0056b3;
-            --button-hover-start: #0056b3;
-            --button-hover-end: #004085;
-            --button-disabled-bg: #333333;
-            --spinner-color: #007bff;
-            --code-bg: #1e1e1e;
-            --code-text: #d0d0d0;
-            --code-border: #383838;
-            --controls-panel-transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Adjusted for bouncier feel */
+            --primary: #6366f1;
+            --primary-hover: #5855eb;
+            --primary-light: rgba(99, 102, 241, 0.1);
+            --secondary: #64748b;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --bg-chat: #0f0f0f;
+            --text-primary: #ffffff;
+            --text-secondary: #a1a1aa;
+            --text-muted: #71717a;
+            --border-color: #27272a;
+            --border-light: #3f3f46;
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
+            --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+            --glow: 0 0 20px rgba(99, 102, 241, 0.3);
+            --gradient-bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --gradient-text: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: 'Dyslexie Regular', sans-serif;
-            background: linear-gradient(135deg, var(--body-bg-start) 0%, var(--body-bg-end) 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px 0;
-            box-sizing: border-box;
-            color: var(--text-color);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            overflow: hidden;
+            height: 100vh;
         }
 
-        .container {
-            max-width: 800px;
-            width: 95%;
-            height: 85vh;
-            max-height: 700px;
-            background-color: var(--container-bg);
-            border-radius: 12px;
-            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+        .app-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: var(--bg-primary);
+            overflow: hidden;
+        }
+
+        .bg-animation::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent, var(--primary), transparent, var(--primary), transparent);
+            animation: rotate 20s linear infinite;
+            opacity: 0.03;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
             display: flex;
             flex-direction: column;
-            overflow: hidden; /* Important for collapsing panel */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            backdrop-filter: blur(20px);
+            z-index: 100;
         }
 
-        .main-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 20px; /* Match h1 padding */
-            margin: 20px 0 0 0; /* Adjust margins */
-            position: relative; /* For absolute positioning of button if needed */
+        .sidebar.collapsed {
+            width: 0;
+            transform: translateX(-100%);
+            padding: 0;
+            border-right: none;
+            overflow: hidden;
+        }
+         .sidebar.collapsed > * {
+            display: none;
         }
 
-        h1 {
-            color: var(--text-color);
-            text-align: left; /* Align to left for button placement */
-            margin: 0; /* Removed top/bottom margin from h1 itself */
+
+        .sidebar-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--gradient-bg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sidebar-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .app-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .app-subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.875rem;
+            font-weight: 400;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .config-section {
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
             font-weight: 600;
-            font-size: 1.5em;
-            flex-grow: 1;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
         }
 
-        #clear-configure-button {
-            background: var(--assistant-bg);
-            color: var(--text-color);
-            border: 1px solid var(--border-color);
-            padding: 8px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9em;
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
             font-weight: 500;
-            transition: background-color 0.2s, transform 0.2s, opacity 0.3s ease-out;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .form-select option {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .system-prompt-section {
+            background: var(--bg-tertiary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .system-prompt-section:hover {
+            border-color: var(--primary);
+            box-shadow: var(--glow);
+        }
+
+        .system-prompt-header {
             display: flex;
             align-items: center;
-            gap: 6px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px) scale(0.95);
+            justify-content: space-between;
+            margin-bottom: 1rem;
         }
-        #clear-configure-button.visible {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0) scale(1);
+
+        .system-prompt-title { /* Renamed for clarity from old 'system-prompt-title' used for the text "Custom Instructions" */
+            font-weight: 600;
+            color: var(--text-primary);
         }
-        #clear-configure-button:hover {
-            background-color: #3f3f3f;
-            transform: translateY(0) scale(1.03);
+
+        .system-prompt-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
         }
-        #clear-configure-button svg {
-            width: 16px;
-            height: 16px;
+
+        .system-prompt-status.active {
+            background: var(--success);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .system-prompt-status.inactive {
+            background: var(--bg-chat);
+            color: var(--text-muted);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .system-prompt-textarea {
+            width: 100%;
+            min-height: 120px;
+            max-height: 200px;
+            padding: 1rem;
+            background: var(--bg-chat);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            resize: vertical;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            line-height: 1.5;
+        }
+
+        .system-prompt-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .system-prompt-textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-chat);
+            color: var(--text-primary);
+            border-color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .btn-icon {
+            width: 1rem;
+            height: 1rem;
             fill: currentColor;
         }
 
-
-        .controls-panel {
-            padding: 15px 30px 15px 30px; /* Add top padding back */
-            border-bottom: 1px solid var(--border-color);
-            transition: var(--controls-panel-transition);
-            max-height: 300px; /* Adjust as needed for content, should be larger than actual height */
-            opacity: 1;
-            overflow: hidden;
-            margin-bottom: 0; /* Initial margin */
-        }
-        .controls-panel.collapsed {
-            max-height: 0;
-            opacity: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            border-bottom-width: 0;
-            margin-bottom: -1px; /* To prevent double border with chat history on expand */
-        }
-
-
-        .controls-row {
-            margin-bottom: 15px;
-        }
-        .controls-row:last-child {
-            margin-bottom: 0;
-        }
-         .system-prompt-controls-area {
-            margin-top: 15px;
-        }
-
-        #open-system-prompt-modal-button {
-            padding: 8px 15px;
-            border-radius: 6px;
+        .memory-stats {
+            background: var(--bg-chat);
+            border-radius: 0.75rem;
+            padding: 1rem;
             border: 1px solid var(--border-color);
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 0.9em;
-            transition: background-color 0.2s, border-color 0.2s;
+        }
+
+        .memory-item {
             display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        #open-system-prompt-modal-button:hover {
-            background-color: #2c2c2c;
-            border-color: var(--button-gradient-start);
-        }
-        #open-system-prompt-modal-button:disabled {
-            background: var(--button-disabled-bg) !important;
-            color: #888888 !important;
-            cursor: not-allowed;
-            border-color: var(--border-color) !important;
-        }
-        #open-system-prompt-modal-button:disabled #system-prompt-status-indicator {
-            background-color: #555 !important;
-            color: #999 !important;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-
-        #system-prompt-status-indicator {
-            font-size: 0.85em;
-            padding: 3px 8px;
-            border-radius: 10px;
-            transition: background-color 0.3s, color 0.3s;
-            margin-left: 5px;
-        }
-        #system-prompt-status-indicator.inactive {
-            background-color: var(--assistant-bg);
-            color: #999;
-        }
-        #system-prompt-status-indicator.active {
-            background-color: var(--button-gradient-start);
-            color: white;
-            font-weight: 500;
+        .memory-item:last-child {
+            border-bottom: none;
         }
 
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9em;
-            color: #b0b0b0;
+        .memory-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
         }
 
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            font-size: 14px;
-            box-sizing: border-box;
-            cursor: pointer;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            transition: border-color 0.2s ease;
-        }
-        select option {
-            background-color: var(--input-bg);
-            color: var(--text-color);
-        }
-        select:focus {
-            outline: none;
-            border-color: var(--button-gradient-start);
+        .memory-value {
+            font-weight: 600;
+            color: var(--primary);
         }
 
-        .chat-history {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 20px 30px;
+        /* Main Chat Area */
+        .main-content {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            position: relative;
+            transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 0; /* Prevent overflow issues */
+        }
+
+        .chat-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--bg-tertiary);
+            color: var(--primary);
+        }
+
+        .chat-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 2rem;
+            background: var(--bg-chat);
+            position: relative;
         }
 
         .message {
-            padding: 10px 15px; /* Adjusted padding */
-            border-radius: 10px;
-            max-width: 90%;
-            word-wrap: break-word;
-            font-size: 15px;
-            line-height: 1.5;
-            color: var(--text-color);
+            margin-bottom: 2rem;
+            animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            animation: fadeIn 0.4s ease-out;
-            display: flex; /* For copy button alignment */
-            flex-direction: column; /* Stack label, content, copy button */
         }
 
-        .message-header { /* To contain model label */
-            position: relative;
-            height: 0; /* Will be effectively positioned by label */
+        @keyframes messageSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .message .model-label {
-            position: absolute;
-            top: -14px; /* Position above the bubble */
-            left: 10px;
-            font-size: 0.7em;
-            color: #b0b0b0;
-            background-color: rgba(40, 40, 40, 0.85);
-            padding: 1px 5px;
-            border-radius: 3px;
-            z-index: 1;
-        }
-        .message.user .model-label {
-            left: auto;
-            right: 10px;
+        .message-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
         }
 
-        .message-content-wrapper {
-            padding-top: 8px; /* Space for label if it overflows a bit */
-             flex-grow: 1;
+        .message-avatar {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: white;
+            flex-shrink: 0;
         }
 
+        .message-avatar.user {
+            background: var(--primary);
+        }
 
-        .copy-message-button {
-            background: none;
-            border: none;
-            color: #888;
-            cursor: pointer;
-            font-size: 0.9em; /* Adjust size of emoji/icon */
-            padding: 2px 4px;
-            border-radius: 4px;
+        .message-avatar.assistant {
+            background: var(--success);
+        }
+
+        .message-avatar.system {
+            background: var(--warning);
+        }
+         .message-avatar.error { /* Added for potential error specific styling */
+            background: var(--error);
+        }
+
+        .message-info {
+            flex: 1;
+        }
+
+        .message-sender {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+        }
+
+        .message-model {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .message-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-left: auto; /* Pushes time and actions to the right */
+        }
+
+        .message-actions {
+            display: flex;
+            gap: 0.5rem;
             opacity: 0;
-            transition: opacity 0.2s ease, color 0.2s, transform 0.1s;
-            position: absolute; /* Position within the message bubble */
-            bottom: 5px;
-            right: 5px;
-            line-height: 1;
+            transition: opacity 0.2s ease;
+            margin-left: 0.5rem; /* Space between time and actions */
         }
-        .message:hover .copy-message-button {
+
+        .message:hover .message-actions {
             opacity: 1;
         }
-        .copy-message-button:hover {
-            color: var(--button-gradient-start);
-            transform: scale(1.1);
-        }
-         .copy-message-button.copied {
-            color: var(--button-gradient-start); /* Or a green color */
-         }
 
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .message.user {
-            background-color: var(--user-bg);
-            align-self: flex-end;
-            border-bottom-right-radius: 2px;
-        }
-
-        .message.assistant {
-            background-color: var(--assistant-bg);
-            align-self: flex-start;
-            border-bottom-left-radius: 2px;
-        }
-
-        .message.error {
-            background-color: var(--error-bg);
-            color: var(--error-text);
-            border: 1px solid var(--error-text);
-            align-self: flex-start;
-        }
-
-        .message.assistant p:last-child, .message.user p:last-child { margin-bottom: 0; }
-        .message.assistant p, .message.user p { margin-bottom: 0.75em; }
-
-        .message.assistant pre {
-            background-color: var(--code-bg);
-            color: var(--code-text);
-            padding: 12px 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-            white-space: pre;
-            word-wrap: normal;
-            border: 1px solid var(--code-border);
-            margin: 10px 0;
-            font-size: 0.9em;
-        }
-        .message.assistant code { font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', monospace; }
-        .message.assistant :not(pre) > code {
-            background-color: rgba(200, 200, 200, 0.15);
-            padding: 2px 5px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: var(--code-text);
-        }
-        .message.assistant ul, .message.assistant ol { padding-left: 25px; margin: 10px 0; }
-        .message.assistant li { margin-bottom: 5px; }
-
-        .input-area {
-            display: flex;
-            padding: 15px 30px;
-            border-top: 1px solid var(--border-color);
-            gap: 10px;
-            align-items: flex-end;
-            background-color: #0a0a0a;
-        }
-
-        textarea#prompt-input {
-            flex-grow: 1;
-            padding: 10px 12px;
-            border-radius: 8px;
+        .copy-btn {
+            background: var(--bg-tertiary);
             border: 1px solid var(--border-color);
-            font-size: 15px;
-            resize: none;
-            box-sizing: border-box;
-            min-height: 44px;
-            max-height: 150px;
-            overflow-y: auto;
-            line-height: 1.4;
-            background-color: var(--input-bg);
-            color: var(--text-color);
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-        textarea#prompt-input::placeholder { color: #777; }
-        textarea#prompt-input:focus {
-             outline: none;
-             border-color: var(--button-gradient-start);
-             box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+            color: var(--text-secondary);
+            border-radius: 0.5rem;
+            padding: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
         }
 
-        button#send-button { /* Target specifically send button if needed */
-            padding: 10px 18px;
-            border-radius: 8px;
+        .copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .copy-btn.copied {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .message-content {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden; /* Ensures rounded corners clip content */
+             word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .message.system .message-content { /* Also used for errors now */
+            background: rgba(245, 158, 11, 0.1); /* Warning color for general system */
+            border-color: var(--warning);
+        }
+         .message.error .message-content { /* If we want specific error styling */
+            background: rgba(239, 68, 68, 0.1);
+            border-color: var(--error);
+        }
+
+
+        /* Enhanced Markdown Styling */
+        .message-content h1,
+        .message-content h2,
+        .message-content h3,
+        .message-content h4,
+        .message-content h5,
+        .message-content h6 {
+            color: var(--text-primary);
+            margin: 1.5rem 0 1rem 0;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .message-content h1 {
+            font-size: 1.75rem; /* Slightly smaller than 2rem */
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .message-content h2 {
+            font-size: 1.375rem; /* Slightly smaller */
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
+        }
+
+        .message-content h3 { font-size: 1.125rem; }
+        .message-content h4 { font-size: 1rem; }
+        .message-content h5 { font-size: 0.875rem; }
+        .message-content h6 { font-size: 0.75rem; }
+
+        .message-content p {
+            margin: 1rem 0;
+            line-height: 1.6;
+            color: var(--text-primary);
+        }
+        .message-content p:first-child { margin-top: 0; }
+        .message-content p:last-child { margin-bottom: 0; }
+
+
+        .message-content ul,
+        .message-content ol {
+            margin: 1rem 0 1rem 1.5rem;
+            line-height: 1.6;
+            padding-left: 1.5rem; /* ensure padding */
+        }
+
+        .message-content ul li,
+        .message-content ol li {
+            margin: 0.5rem 0;
+            color: var(--text-primary);
+        }
+
+        .message-content blockquote {
+            border-left: 4px solid var(--primary);
+            margin: 1.5rem 0;
+            padding: 1rem 1.5rem;
+            background: var(--bg-tertiary);
+            border-radius: 0 0.5rem 0.5rem 0;
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+         .message-content blockquote p {
+            margin: 0.5rem 0; /* Adjust paragraph margin inside blockquote */
+        }
+
+        .message-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .message-content th,
+        .message-content td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .message-content th {
+            background: var(--bg-tertiary);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .message-content td {
+            color: var(--text-secondary);
+        }
+
+        .message-content tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Enhanced Code Block Styling */
+        .message-content pre {
+            background: #1e1e1e !important; /* Ensure override for hljs */
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            margin: 1.5rem 0;
+            overflow: hidden;
+            position: relative;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .code-header {
+            background: #2d2d2d;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .code-language {
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--primary);
+        }
+
+        .code-copy-btn {
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+
+        .code-copy-btn:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .code-copy-btn.copied {
+            background: var(--success);
+            color: white;
+            border-color: var(--success);
+        }
+
+        .message-content pre code.hljs { /* Target hljs specifically */
+            display: block;
+            padding: 1.5rem !important; /* Ensure padding */
+            overflow-x: auto;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            background: transparent !important; /* Ensure override */
+            color: #d4d4d4 !important; /* Ensure override */
+        }
+
+        .message-content :not(pre) > code { /* Inline code */
+            background: var(--bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 0.875em; /* relative to parent */
+            color: var(--primary);
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            backdrop-filter: blur(20px);
+        }
+
+        .input-container {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        .message-input {
+            width: 100%;
+            min-height: 3rem; /* 48px */
+            max-height: 8rem; /* 128px */
+            padding: 0.75rem 3.5rem 0.75rem 1rem; /* Adjusted padding for button */
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            resize: none;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            line-height: 1.5;
+            overflow-y: hidden; /* Start hidden, make auto when maxHeight reached */
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .message-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-actions {
+            position: absolute;
+            right: 0.75rem;
+            bottom: 0.65rem; /* Adjusted for alignment */
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .input-btn {
+            width: 2.25rem; /* Slightly larger */
+            height: 2.25rem;
             border: none;
-            background: linear-gradient(135deg, var(--button-gradient-start), var(--button-gradient-end));
+            border-radius: 0.75rem; /* Match textarea */
+            background: var(--primary);
             color: white;
             cursor: pointer;
-            font-weight: 500;
-            font-size: 15px;
-            transition: background 0.3s ease, transform 0.1s ease, box-shadow 0.2s ease;
-            height: 44px;
-            flex-shrink: 0;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        button#send-button:hover {
-            background: linear-gradient(135deg, var(--button-hover-start), var(--button-hover-end));
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
-        }
-        button#send-button:active {
-             transform: scale(0.98);
-             box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-        }
-        button#send-button:disabled {
-            background: var(--button-disabled-bg);
-            color: #888888;
-            cursor: not-allowed;
-            box-shadow: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 0 5px 0 5px;
-            color: #b0b0b0;
+        .input-btn:hover {
+            background: var(--primary-hover);
+            transform: scale(1.05);
+        }
+
+        .input-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .loading-indicator {
+            display: none; /* Initially hidden */
             align-items: center;
-            justify-content: flex-start;
-            gap: 8px;
-            font-size: 0.9em;
-            height: 44px;
-            flex-shrink: 0;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem; /* Space above input when active */
+        }
+
+        .loading-indicator.active {
+            display: flex;
         }
 
         .spinner {
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            width: 18px;
-            height: 18px;
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary);
             border-radius: 50%;
-            border-left-color: var(--spinner-color);
-            animation: spin 1s ease infinite;
-            flex-shrink: 0;
+            animation: spin 1s linear infinite;
         }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0, 0, 0, 0.65); display: flex;
-            justify-content: center; align-items: center; z-index: 1000;
-            opacity: 0; visibility: hidden; transition: opacity 0.25s ease, visibility 0s linear 0.25s;
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 1rem; /* Changed to bottom */
+            right: 1rem;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column-reverse; /* New toasts appear on top */
+            gap: 0.5rem;
         }
-        .modal-overlay.visible { opacity: 1; visibility: visible; transition-delay: 0s; }
 
-        .modal-content-box {
-            background-color: var(--container-bg); border: 1px solid var(--border-color);
-            padding: 25px; border-radius: 10px; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
-            width: 90%; max-width: 600px; display: flex; flex-direction: column; gap: 20px;
-            transform: scale(0.9) translateY(-20px); transition: transform 0.25s ease, opacity 0.25s ease; opacity: 0;
+        .toast {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            padding: 1rem 1.5rem;
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            box-shadow: var(--shadow-xl);
+            animation: toastSlideInUp 0.3s ease;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            min-width: 250px;
         }
-        .modal-overlay.visible .modal-content-box { transform: scale(1) translateY(0); opacity: 1; }
 
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 1px solid var(--border-color); padding-bottom: 15px;
+        .toast.success {
+            border-left: 4px solid var(--success); /* Accent border */
         }
-        .modal-header h2 { margin: 0; font-size: 1.4em; color: var(--text-color); font-weight: 500; }
-        .modal-close-icon {
-            background: none; border: none; color: var(--text-color); font-size: 1.8em;
-            cursor: pointer; padding: 0 5px; line-height: 1; transition: color 0.2s;
-        }
-        .modal-close-icon:hover { color: var(--button-gradient-start); }
 
-        #modal-system-prompt-textarea {
-            width: 100%; padding: 12px 15px; border-radius: 8px; border: 1px solid var(--border-color);
-            font-size: 15px; box-sizing: border-box; background-color: var(--input-bg);
-            color: var(--text-color); resize: vertical; min-height: 120px; max-height: 300px;
-            line-height: 1.5; font-family: 'Dyslexie Regular', sans-serif;
+        .toast.error {
+            border-left: 4px solid var(--error);
         }
-        #modal-system-prompt-textarea:focus {
-            outline: none; border-color: var(--button-gradient-start); box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-        #modal-system-prompt-textarea::placeholder { color: #777; }
 
-        .modal-actions {
-            display: flex; justify-content: flex-end; align-items: center; gap: 12px;
-            padding-top: 15px; border-top: 1px solid var(--border-color);
+        @keyframes toastSlideInUp { /* Changed animation */
+            from {
+                opacity: 0;
+                transform: translateY(100%);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .modal-actions button { padding: 9px 18px; font-size: 0.95em; height: auto; box-shadow: none; }
-        .modal-actions button.secondary {
-            background: var(--assistant-bg); border: 1px solid var(--border-color); color: var(--text-color);
+         @keyframes toastFadeOut {
+            to {
+                opacity: 0;
+                transform: translateY(20px);
+            }
         }
-        .modal-actions button.secondary:hover { background: #3f3f3f; border-color: #555; }
-        #copy-modal-system-prompt-button, #clear-modal-system-prompt-button {
-            margin-right: auto; background: var(--user-bg); border: 1px solid var(--border-color);
-        }
-         #clear-modal-system-prompt-button { margin-right: 0; }
-        #copy-modal-system-prompt-button:hover, #clear-modal-system-prompt-button:hover { background: #3a4f63; }
 
-        #copy-feedback-popup {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            background-color: var(--button-gradient-start); color: white; padding: 12px 25px;
-            border-radius: 6px; z-index: 1001; opacity: 0;
-            transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none;
-            font-size: 0.9em; box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-        }
-        #copy-feedback-popup.visible { opacity: 1; transform: translateX(-50%) translateY(-10px); }
 
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                height: 100vh;
+                z-index: 200; /* Ensure sidebar is on top when open */
+                width: 280px; /* Slightly narrower for mobile */
+            }
+
+            .sidebar.collapsed {
+                transform: translateX(-100%);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+             .chat-header, .input-area {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .chat-messages {
+                padding: 1rem;
+            }
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 0.5rem;
+            height: 0.5rem;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 0.25rem;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-light);
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="main-header">
-            <h1>AI Model Explorer</h1>
-            <button id="clear-configure-button" title="Clear Chat & Edit Configuration">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19.465 8.655c-.293-.293-.638-.44-.983-.44h-2.122c-.346-1.092-.832-2.103-1.45-3.035a.989.989 0 0 0-.805-.405.989.989 0 0 0-.805.405c-.618.932-1.104 1.943-1.45 3.035H9.5c-.345 0-.69.147-.983.44s-.44.638-.44.983v2.122c-1.092.346-2.103.832-3.035 1.45a.989.989 0 0 0-.405.805.989.989 0 0 0 .405.805c.932.618 1.943 1.104 3.035 1.45v2.122c0 .345.147.69.44.983s.638.44.983.44h2.122c.346 1.092.832 2.103 1.45 3.035a.989.989 0 0 0 .805.405.989.989 0 0 0 .805-.405c.618-.932 1.104-1.943 1.45-3.035h2.122c.345 0 .69-.147.983-.44s.44-.638.44-.983v-2.122c1.092-.346 2.103-.832 3.035-1.45a.989.989 0 0 0 .405-.805.989.989 0 0 0-.405-.805c-.932-.618-1.943-1.104-3.035-1.45V9.638c0-.345-.147-.69-.44-.983zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"/></svg>
-                Clear & Configure
-            </button>
+    <div class="bg-animation"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-header-content">
+                    <h1 class="app-title">AI Chat Explorer</h1>
+                    <p class="app-subtitle">Advanced Conversational AI</p>
+                </div>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="config-section">
+                    <h3 class="section-title">Model Configuration</h3>
+                    <div class="form-group">
+                        <label class="form-label" for="model-select">AI Model</label>
+                        <select id="model-select" class="form-select">
+                            <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                             <option value="claude-sonnet-4-latest">Anthropic Claude 4 Sonnet</option>
+                              <option value="claude-opus-4-latest">Anthropic Claude 4 opus</option>
+                            <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
+                            <option value="openrouter:openai/o3">OpenAI O3</option>
+                            <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                            <option value="openrouter:openai/codex-mini">OpenAI Codex Mini</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3 class="section-title">System Prompt</h3>
+                    <div class="system-prompt-section">
+                        <div class="system-prompt-header">
+                            <span class="system-prompt-title">Custom Instructions</span>
+                            <span id="system-prompt-status" class="system-prompt-status inactive">Inactive</span>
+                        </div>
+                        <textarea 
+                            id="system-prompt-textarea" 
+                            class="system-prompt-textarea"
+                            placeholder="Define the AI's behavior, personality, and response style. For example: 'You are a helpful programming assistant. Always provide code examples and explain your reasoning step by step.'"
+                        ></textarea>
+                        <div style="margin-top: 1rem; display: flex; gap: 0.75rem;">
+                            <button id="save-system-prompt" class="btn btn-primary" style="flex: 1;">
+                                <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                                Save
+                            </button>
+                            <button id="clear-system-prompt-btn" class="btn btn-secondary"> <!-- Renamed ID slightly -->
+                                <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                                Clear
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3 class="section-title">Memory & Statistics</h3>
+                    <div class="memory-stats">
+                        <div class="memory-item">
+                            <span class="memory-label">Messages</span>
+                            <span id="message-count" class="memory-value">0</span>
+                        </div>
+                        <div class="memory-item">
+                            <span class="memory-label">Tokens (Est.)</span>
+                            <span id="token-count" class="memory-value">0</span>
+                        </div>
+                        <div class="memory-item">
+                            <span class="memory-label">Session Duration</span>
+                            <span id="session-duration" class="memory-value">0m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <button id="clear-chat-btn" class="btn btn-danger" style="width: 100%;"> <!-- Renamed ID slightly -->
+                        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        Clear Chat & Prompt
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <div class="controls-panel" id="controls-panel">
-            <div class="controls-row">
-                <label for="model-select">Select AI Model:</label>
-                <select id="model-select">
-                     <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
-                     <option value="openrouter:openai/o1-pro">OpenAI O1 Pro</option>
-                     <option value="openrouter:openai/o4-mini">OpenAI o4-mini</option>
-                     <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
-                     <option value="openrouter:openai/o3">OpenAI O3</option>
-                     <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-                     <option value="openrouter:openai/codex-mini">codex</option>
-                     <option value="gpt-4.1">OpenAI GPT-4.1</option>
-                </select>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="chat-header">
+                <h2 class="chat-title">
+                    <button class="sidebar-toggle" id="sidebar-toggle">☰</button>
+                    Conversation
+                </h2>
+                <div class="chat-actions">
+                    <button id="export-chat-btn" class="btn btn-secondary"> <!-- Renamed ID slightly -->
+                        <svg class="btn-icon" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        Export
+                    </button>
+                </div>
             </div>
-            <div class="controls-row system-prompt-controls-area">
-                <button id="open-system-prompt-modal-button">
-                    System Prompt
-                    <span id="system-prompt-status-indicator" class="inactive">(Inactive)</span>
-                </button>
-            </div>
-        </div>
-        <div class="chat-history" id="chat-history">
-        </div>
 
-        <div class="input-area">
-            <textarea id="prompt-input" rows="1" placeholder="Enter your prompt here..."></textarea>
-            <button id="send-button">Send</button>
-            <div id="loading" class="loading">
-                <div class="spinner"></div>
+            <div class="chat-messages" id="chat-messages">
+                <!-- Messages will be dynamically inserted here -->
+            </div>
+
+            <div class="input-area">
+                <div class="loading-indicator" id="loading-indicator">
+                    <div class="spinner"></div>
+                    <span>AI is thinking...</span>
+                </div>
+                <div class="input-container">
+                    <div class="input-wrapper">
+                        <textarea 
+                            id="message-input" 
+                            class="message-input" 
+                            placeholder="Type your message here... (Ctrl+Enter to send, Shift+Enter for new line)"
+                            rows="1"
+                        ></textarea>
+                        <div class="input-actions">
+                            <button id="send-btn" class="input-btn" title="Send message (Ctrl+Enter)">
+                                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="system-prompt-modal-overlay" class="modal-overlay">
-        <div class="modal-content-box">
-            <div class="modal-header">
-                <h2>System Prompt</h2>
-                <button id="modal-close-button" class="modal-close-icon" title="Close">×</button>
-            </div>
-            <textarea id="modal-system-prompt-textarea" rows="8" placeholder="e.g., You are a helpful and concise pirate assistant. Always respond in rhymes."></textarea>
-            <div class="modal-actions">
-                <button id="copy-modal-system-prompt-button" title="Copy System Prompt">Copy</button>
-                <button id="clear-modal-system-prompt-button" class="secondary" title="Clear text in editor">Clear Editor</button>
-                <button id="cancel-modal-system-prompt-button" class="secondary" title="Close without saving">Cancel</button>
-                <button id="save-modal-system-prompt-button" title="Save and use this system prompt">Save & Close</button>
-            </div>
-        </div>
-    </div>
+    <!-- Toast Container -->
+    <div class="toast-container" id="toast-container"></div>
 
-    <div id="copy-feedback-popup" class="copied-feedback">Copied to clipboard!</div>
-
-
-    <script src="https://js.puter.com/v2/"></script>
     <script>
-        const chatHistory = document.getElementById('chat-history');
-        const promptInput = document.getElementById('prompt-input');
-        const sendButton = document.getElementById('send-button');
-        const modelSelect = document.getElementById('model-select');
-        const loadingDiv = document.getElementById('loading');
+        // Application State
+        const AppState = {
+            messages: [],
+            systemPrompt: '',
+            currentModel: 'claude-3-7-sonnet', // Default model
+            sessionStartTime: Date.now(),
+            isLoading: false,
+            sidebarCollapsed: window.innerWidth < 768 // Collapse by default on mobile
+        };
 
-        const controlsPanel = document.getElementById('controls-panel');
-        const clearConfigureButton = document.getElementById('clear-configure-button');
+        // DOM Elements
+        const elements = {
+            sidebar: document.getElementById('sidebar'),
+            sidebarToggle: document.getElementById('sidebar-toggle'),
+            chatMessages: document.getElementById('chat-messages'),
+            messageInput: document.getElementById('message-input'),
+            sendBtn: document.getElementById('send-btn'),
+            loadingIndicator: document.getElementById('loading-indicator'),
+            modelSelect: document.getElementById('model-select'),
+            systemPromptTextarea: document.getElementById('system-prompt-textarea'),
+            systemPromptStatus: document.getElementById('system-prompt-status'),
+            saveSystemPrompt: document.getElementById('save-system-prompt'),
+            clearSystemPromptBtn: document.getElementById('clear-system-prompt-btn'),
+            clearChatBtn: document.getElementById('clear-chat-btn'),
+            exportChatBtn: document.getElementById('export-chat-btn'),
+            messageCount: document.getElementById('message-count'),
+            tokenCount: document.getElementById('token-count'),
+            sessionDuration: document.getElementById('session-duration'),
+            toastContainer: document.getElementById('toast-container')
+        };
 
-        const openSystemPromptModalButton = document.getElementById('open-system-prompt-modal-button');
-        const systemPromptStatusIndicator = document.getElementById('system-prompt-status-indicator');
-        const systemPromptModalOverlay = document.getElementById('system-prompt-modal-overlay');
-        const modalSystemPromptTextarea = document.getElementById('modal-system-prompt-textarea');
-        const modalCloseButton = document.getElementById('modal-close-button');
-        const saveModalSystemPromptButton = document.getElementById('save-modal-system-prompt-button');
-        const cancelModalSystemPromptButton = document.getElementById('cancel-modal-system-prompt-button');
-        const clearModalSystemPromptButton = document.getElementById('clear-modal-system-prompt-button');
-        const copyModalSystemPromptButton = document.getElementById('copy-modal-system-prompt-button');
-        const copyFeedbackPopup = document.getElementById('copy-feedback-popup');
-
-        let currentSystemPrompt = "";
-        let chatHasStarted = false;
-        const INITIAL_GREETING_CONTENT = 'Hello! Select a model and ask me anything. Try asking for code or a list!';
-        const CHAT_CLEARED_GREETING_CONTENT = 'Chat cleared. Configure model & system prompt, then ask away!';
-
-
-        let chatMessages = [
-            { role: 'system', content: INITIAL_GREETING_CONTENT, model: 'System' }
-        ];
-
-        function updateSystemPromptIndicator() {
-            if (currentSystemPrompt) {
-                systemPromptStatusIndicator.textContent = '(Active)';
-                systemPromptStatusIndicator.classList.remove('inactive');
-                systemPromptStatusIndicator.classList.add('active');
-            } else {
-                systemPromptStatusIndicator.textContent = '(Inactive)';
-                systemPromptStatusIndicator.classList.remove('active');
-                systemPromptStatusIndicator.classList.add('inactive');
-            }
+        // Utility Functions
+        function formatTime(timestamp) {
+            return new Date(timestamp).toLocaleTimeString([], { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
         }
 
-        function openSystemPromptModal() {
-            modalSystemPromptTextarea.value = currentSystemPrompt;
-            systemPromptModalOverlay.classList.add('visible');
-            modalSystemPromptTextarea.focus();
+        function estimateTokens(text) {
+            if (!text) return 0;
+            return Math.ceil(text.length / 4); // Rough estimation
         }
 
-        function closeSystemPromptModal() {
-            systemPromptModalOverlay.classList.remove('visible');
+        function updateSessionDuration() {
+            const durationSeconds = Math.floor((Date.now() - AppState.sessionStartTime) / 1000);
+            const minutes = Math.floor(durationSeconds / 60);
+            const seconds = durationSeconds % 60;
+            elements.sessionDuration.textContent = `${minutes}m ${seconds}s`;
         }
 
-        function handleSaveSystemPrompt() {
-            currentSystemPrompt = modalSystemPromptTextarea.value.trim();
-            updateSystemPromptIndicator();
-            closeSystemPromptModal();
-            console.log("System Prompt saved:", currentSystemPrompt || "None");
+        function updateStats() {
+            elements.messageCount.textContent = AppState.messages.length;
+            const totalTokens = AppState.messages.reduce((sum, msg) => 
+                sum + estimateTokens(msg.content), 0) + estimateTokens(AppState.systemPrompt);
+            elements.tokenCount.textContent = totalTokens.toLocaleString();
+            updateSessionDuration();
         }
+        setInterval(updateSessionDuration, 1000); // Update duration every second
 
-        function handleClearSystemPromptInModal() {
-            modalSystemPromptTextarea.value = '';
-            modalSystemPromptTextarea.focus();
-        }
 
-        function showCopyFeedback(message = "Copied to clipboard!") {
-            copyFeedbackPopup.textContent = message;
-            copyFeedbackPopup.classList.add('visible');
+        function showToast(message, type = 'success', duration = 3000) {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            
+            elements.toastContainer.appendChild(toast); // Appends to bottom, appears on top due to flex-direction: column-reverse
+            
             setTimeout(() => {
-                copyFeedbackPopup.classList.remove('visible');
-            }, 2000);
+                toast.style.animation = 'toastFadeOut 0.3s ease forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, duration);
         }
 
-        function handleCopySystemPrompt() {
-            const textToCopy = modalSystemPromptTextarea.value;
-            if (textToCopy) {
-                navigator.clipboard.writeText(textToCopy).then(() => {
-                    showCopyFeedback();
-                }).catch(err => {
-                    console.error('Failed to copy system prompt: ', err);
-                    alert("Failed to copy. Please try manually.");
-                });
-            } else {
-                showCopyFeedback("Nothing to copy!");
+        function toggleSidebar() {
+            AppState.sidebarCollapsed = !AppState.sidebarCollapsed;
+            elements.sidebar.classList.toggle('collapsed', AppState.sidebarCollapsed);
+        }
+        
+        async function copyToClipboard(text, feedbackElement) {
+            try {
+                await navigator.clipboard.writeText(text);
+                if (feedbackElement) {
+                    const originalText = feedbackElement.innerHTML;
+                    feedbackElement.classList.add('copied');
+                    feedbackElement.innerHTML = `
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                        Copied
+                    `;
+                    setTimeout(() => {
+                        feedbackElement.classList.remove('copied');
+                        feedbackElement.innerHTML = originalText;
+                    }, 1500);
+                }
+                return true;
+            } catch (err) {
+                console.error('Failed to copy:', err);
+                showToast('Failed to copy to clipboard.', 'error');
+                return false;
             }
         }
 
-        function renderChatHistory(newMessageAdded = false) {
-            const isScrolledToBottom = chatHistory.scrollHeight - chatHistory.clientHeight <= chatHistory.scrollTop + 10;
+        function copyMessage(button) {
+            const messageContentElement = button.closest('.message').querySelector('.message-content');
+            // Create a temporary div to get text content from HTML, preserving line breaks better
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = messageContentElement.innerHTML; // Use innerHTML to parse HTML entities if any
+            // Remove code blocks from general message copy, as they have their own copy buttons
+            tempDiv.querySelectorAll('pre').forEach(pre => pre.remove());
+            
+            let textToCopy = "";
+            // Convert <br> to \n and handle <p> for better text representation
+            tempDiv.innerHTML = tempDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
+            tempDiv.querySelectorAll('p, li, h1, h2, h3, h4, h5, h6').forEach(el => {
+                textToCopy += el.textContent + '\n';
+            });
+            if (!textToCopy) textToCopy = tempDiv.textContent || tempDiv.innerText; // Fallback
+            
+            copyToClipboard(textToCopy.trim(), button).then(success => {
+                if (success) showToast('Message copied!');
+            });
+        }
 
-            chatHistory.innerHTML = '';
-            chatMessages.forEach((msg, index) => {
-                const messageElement = document.createElement('div');
-                messageElement.classList.add('message', msg.role);
+        function copyCode(button) {
+            const codeBlock = button.closest('pre').querySelector('code');
+            const text = codeBlock.textContent || codeBlock.innerText;
+            copyToClipboard(text, button).then(success => {
+                if (success) showToast('Code copied!');
+            });
+        }
+        
+        window.copyMessage = copyMessage; // Make available globally if onclick is in HTML string
+        window.copyCode = copyCode;     // Make available globally
 
-                const messageHeader = document.createElement('div'); // For label
-                messageHeader.classList.add('message-header');
+        function renderMarkdown(text) {
+            if (!text) return '';
+            marked.setOptions({
+                highlight: function(code, lang) {
+                    const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+                    return hljs.highlight(code, { language }).value;
+                },
+                breaks: true,
+                gfm: true,
+                pedantic: false,
+                sanitize: false // DOMPurify will handle sanitization
+            });
 
-                let labelHtml = '';
-                 if ((msg.role === 'assistant' || msg.role === 'system') && msg.model) {
-                    const modelName = DOMPurify.sanitize(msg.model.includes(':') ? msg.model.split(':').pop().split('/').pop() : msg.model.split('/').pop());
-                    labelHtml = `<span class="model-label">${modelName}</span>`;
-                } else if (msg.role === 'user') {
-                     labelHtml = `<span class="model-label">User</span>`;
+            let html = marked.parse(text);
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+
+            tempDiv.querySelectorAll('pre').forEach(preElement => {
+                const codeElement = preElement.querySelector('code');
+                let lang = 'plaintext';
+                if (codeElement && codeElement.className.startsWith('language-')) {
+                    lang = codeElement.className.replace('language-', '');
                 }
-                messageHeader.innerHTML = labelHtml;
-                messageElement.appendChild(messageHeader);
+                
+                const header = document.createElement('div');
+                header.className = 'code-header';
+                header.innerHTML = `
+                    <span class="code-language">${lang}</span>
+                    <button class="code-copy-btn" onclick="copyCode(this)">
+                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                            <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                        </svg>
+                        Copy
+                    </button>
+                `;
+                preElement.insertBefore(header, codeElement);
+                if(codeElement) codeElement.classList.add('hljs'); // Ensure hljs class for styling
+            });
+            
+            return DOMPurify.sanitize(tempDiv.innerHTML, { ADD_TAGS: ["kbd"], KEEP_CONTENT: true });
+        }
 
-                const contentWrapper = document.createElement('div');
-                contentWrapper.classList.add('message-content-wrapper');
+        function addMessage(role, content, model = null) {
+            const timestamp = Date.now();
+            const message = { role, content, timestamp, model };
+            AppState.messages.push(message);
 
-                if (msg.role === 'assistant') {
-                    try {
-                        const rawHtml = marked.parse(msg.content || '');
-                        contentWrapper.innerHTML = DOMPurify.sanitize(rawHtml);
-                    } catch (parseError) {
-                        console.error("Markdown parsing/sanitizing error:", parseError);
-                        contentWrapper.textContent = msg.content || '';
+            const messageElement = createMessageElement(message);
+            elements.chatMessages.appendChild(messageElement);
+            
+            elements.chatMessages.scrollTop = elements.chatMessages.scrollHeight;
+            updateStats();
+            return messageElement;
+        }
+
+        function createMessageElement(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${message.role}`;
+
+            const avatarMap = { user: 'YOU', assistant: 'AI', system: 'SYS' };
+            const senderName = message.role.charAt(0).toUpperCase() + message.role.slice(1);
+            
+            let modelNameDisplay = '';
+            if (message.role === 'assistant' && message.model) {
+                modelNameDisplay = message.model.replace('openrouter:', '').replace('claude-3-7-sonnet', 'Claude 3.7 Sonnet').split('/').pop();
+            } else if (message.role === 'system' && message.model) {
+                modelNameDisplay = message.model; // Custom string like "System Welcome"
+            }
+
+            messageDiv.innerHTML = `
+                <div class="message-header">
+                    <div class="message-avatar ${message.role}">${avatarMap[message.role]}</div>
+                    <div class="message-info">
+                        <div class="message-sender">${senderName}</div>
+                        ${modelNameDisplay ? `<div class="message-model">${modelNameDisplay}</div>` : ''}
+                    </div>
+                    <div class="message-time">${formatTime(message.timestamp)}</div>
+                    <div class="message-actions">
+                        <button class="copy-btn" onclick="copyMessage(this)">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                                <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                            </svg>
+                            Copy
+                        </button>
+                    </div>
+                </div>
+                <div class="message-content">
+                    ${message.role === 'user' ? 
+                        DOMPurify.sanitize(message.content.replace(/\n/g, '<br>')) : 
+                        renderMarkdown(message.content) // renderMarkdown includes sanitize
                     }
-                } else { // User, System, Error
-                    contentWrapper.textContent = msg.content || '';
-                }
-                messageElement.appendChild(contentWrapper);
-
-                // Add copy button for assistant and user messages (but not system/error for now)
-                if (msg.role === 'assistant' || msg.role === 'user') {
-                    const copyButton = document.createElement('button');
-                    copyButton.classList.add('copy-message-button');
-                    copyButton.innerHTML = '📄';
-                    copyButton.title = 'Copy message';
-                    copyButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const textToCopy = contentWrapper.textContent || "";
-                        navigator.clipboard.writeText(textToCopy.trim()).then(() => {
-                            copyButton.innerHTML = '✅';
-                            copyButton.title = 'Copied!';
-                            copyButton.classList.add('copied');
-                            setTimeout(() => {
-                                copyButton.innerHTML = '📄';
-                                copyButton.title = 'Copy message';
-                                copyButton.classList.remove('copied');
-                            }, 1500);
-                        }).catch(err => {
-                            console.error('Failed to copy message: ', err);
-                            copyButton.innerHTML = '❌';
-                            copyButton.title = 'Copy failed';
-                             setTimeout(() => {
-                                copyButton.innerHTML = '📄';
-                                copyButton.title = 'Copy message';
-                            }, 1500);
-                        });
-                    });
-                    messageElement.appendChild(copyButton);
-                }
-
-                chatHistory.appendChild(messageElement);
-            });
-
-            if (isScrolledToBottom || newMessageAdded) {
-                chatHistory.scrollTop = chatHistory.scrollHeight;
-            }
+                </div>
+            `;
+            // Apply highlighting to new code blocks if any
+            messageDiv.querySelectorAll('pre code').forEach(hljs.highlightElement);
+            return messageDiv;
         }
 
-        async function sendMessage() {
-            const currentPromptText = promptInput.value.trim();
-            const selectedModel = modelSelect.value;
+        async function sendMessageHandler() {
+            const content = elements.messageInput.value.trim();
+            if (!content || AppState.isLoading) return;
 
-            if (!currentPromptText) return;
+            addMessage('user', content);
+            elements.messageInput.value = '';
+            autoResizeTextarea();
 
-            if (!chatHasStarted) {
-                chatHasStarted = true;
-                controlsPanel.classList.add('collapsed');
-                clearConfigureButton.classList.add('visible');
-            }
-
-            chatMessages.push({ role: 'user', content: currentPromptText });
-            renderChatHistory(true);
-
-            promptInput.value = '';
-            promptInput.disabled = true;
-            sendButton.disabled = true;
-            modelSelect.disabled = true;
-            openSystemPromptModalButton.disabled = true;
-            loadingDiv.style.display = 'flex';
-            adjustTextareaHeight();
-
-            const apiMessagesForHistory = [];
-            if (currentSystemPrompt) {
-                apiMessagesForHistory.push({ role: 'system', content: currentSystemPrompt });
-            }
-
-            // Start from index 1 to skip initial greeting if it's still the first message array
-            // Or more robustly, filter for user/assistant roles from chatMessages
-            const historyToConsider = chatMessages.filter(m => m.role === 'user' || m.role === 'assistant');
-             // Take all but the last one (which is the current user prompt) for history
-            historyToConsider.slice(0, -1).forEach(msg => {
-                apiMessagesForHistory.push({ role: msg.role, content: msg.content });
-            });
-
-
-            console.log("API History Messages:", JSON.stringify(apiMessagesForHistory, null, 2));
+            AppState.isLoading = true;
+            elements.loadingIndicator.classList.add('active');
+            elements.sendBtn.disabled = true;
+            elements.messageInput.disabled = true;
 
             try {
-                const apiOptions = { model: selectedModel, max_tokens: 8192 };
-                if (apiMessagesForHistory.length > 0) apiOptions.messages = apiMessagesForHistory;
+                const apiMessagesForHistory = [];
+                if (AppState.systemPrompt) {
+                    apiMessagesForHistory.push({ role: 'system', content: AppState.systemPrompt });
+                }
 
-                const response = await puter.ai.chat(currentPromptText, apiOptions);
+                // Add previous user/assistant messages for history
+                AppState.messages
+                    .filter(m => (m.role === 'user' || m.role === 'assistant') && m !== AppState.messages[AppState.messages.length -1] ) // Exclude current user prompt
+                    .forEach(msg => {
+                        apiMessagesForHistory.push({ role: msg.role, content: msg.content });
+                    });
+                
+                console.log("Sending to Puter.ai with history:", apiMessagesForHistory);
+                console.log("Current prompt:", content);
+                console.log("Model:", AppState.currentModel);
+
+                const apiOptions = { model: AppState.currentModel, max_tokens: 8192 };
+                 if (apiMessagesForHistory.length > 0) {
+                    apiOptions.messages = apiMessagesForHistory;
+                }
+
+                const response = await puter.ai.chat(content, apiOptions); // Pass current prompt as first arg
+                console.log("Puter.ai response:", response);
+
                 let responseContent = '';
                 let successfullyParsed = false;
 
                 if (response?.message?.content) {
-                    if (Array.isArray(response.message.content) && response.message.content[0]?.text === 'string') {
-                        responseContent = response.message.content[0].text; successfullyParsed = true;
-                    } else if (typeof response.message.content === 'string') {
-                        responseContent = response.message.content; successfullyParsed = true;
-                    } else { responseContent = `Unexpected content format. Check console.`; }
-                } else { responseContent = response ? `Unexpected response format. Check console.` : 'Empty/invalid response.'; }
-
-                if (successfullyParsed && responseContent) {
-                    chatMessages.push({ role: 'assistant', content: responseContent, model: selectedModel });
-                } else {
-                    chatMessages.push({ role: 'error', content: `Error with ${selectedModel.split('/').pop() || 'model'}: ${responseContent}` });
+                    // Handle Claude 3.7 Sonnet's typical array response structure
+                    if (Array.isArray(response.message.content) && response.message.content.length > 0 && typeof response.message.content[0].text === 'string') {
+                        responseContent = response.message.content.map(block => block.text).join('\n\n'); // Join if multiple text blocks
+                        successfullyParsed = true;
+                    } else if (typeof response.message.content === 'string') { // Standard string response
+                        responseContent = response.message.content;
+                        successfullyParsed = true;
+                    } else {
+                         responseContent = `Received an unexpected content format from the AI. Please check the browser console for details.`;
+                         console.error("Unexpected AI response content format:", response.message.content);
+                    }
+                } else if (response?.error) {
+                    responseContent = `AI Error: ${response.error.message || response.error.code || 'Unknown error'}`;
+                    console.error("AI Error:", response.error);
                 }
+                 else {
+                    responseContent = `Received an empty or invalid response from the AI. Please check the browser console.`;
+                    console.error("Empty/invalid AI response:", response);
+                }
+                
+                if (successfullyParsed && responseContent) {
+                    addMessage('assistant', responseContent, AppState.currentModel);
+                } else {
+                    addMessage('system', `Error from ${AppState.currentModel.split('/').pop()}: ${responseContent}`, 'System Error');
+                    showToast(responseContent, 'error', 5000);
+                }
+
             } catch (error) {
-                chatMessages.push({ role: 'error', content: `API Error with ${selectedModel.split('/').pop() || 'model'}: ${error.message || 'Unknown error'}. Check console.` });
+                console.error('API Error:', error);
+                const errorMsg = `API Error with ${AppState.currentModel.split('/').pop() || 'model'}: ${error.message || 'Unknown error'}. Check console.`;
+                addMessage('system', errorMsg, 'System Error');
+                showToast(errorMsg, 'error', 5000);
             } finally {
-                promptInput.disabled = false;
-                sendButton.disabled = false;
-                modelSelect.disabled = false;
-                openSystemPromptModalButton.disabled = false;
-                loadingDiv.style.display = 'none';
-                renderChatHistory(true);
-                promptInput.focus();
+                AppState.isLoading = false;
+                elements.loadingIndicator.classList.remove('active');
+                elements.sendBtn.disabled = false;
+                elements.messageInput.disabled = false;
+                elements.messageInput.focus();
             }
         }
 
-        function adjustTextareaHeight() {
-            promptInput.style.height = 'auto';
-            let scrollHeight = promptInput.scrollHeight;
-            const style = window.getComputedStyle(promptInput);
-            const borderTop = parseInt(style.borderTopWidth, 10) || 0;
-            const borderBottom = parseInt(style.borderBottomWidth, 10) || 0;
-            const requiredHeight = scrollHeight + borderTop + borderBottom;
-            const maxHeight = parseInt(style.maxHeight, 10) || 150;
-
-            promptInput.style.height = `${Math.min(requiredHeight, maxHeight)}px`;
-            promptInput.style.overflowY = requiredHeight > maxHeight ? 'auto' : 'hidden';
+        function autoResizeTextarea() {
+            const textarea = elements.messageInput;
+            textarea.style.height = 'auto'; // Reset height to shrink if needed
+            const scrollHeight = textarea.scrollHeight;
+            const maxHeight = parseInt(window.getComputedStyle(textarea).maxHeight, 10);
+            
+            if (scrollHeight > maxHeight) {
+                textarea.style.height = `${maxHeight}px`;
+                textarea.style.overflowY = 'auto';
+            } else {
+                textarea.style.height = `${scrollHeight}px`;
+                textarea.style.overflowY = 'hidden';
+            }
         }
 
-        clearConfigureButton.addEventListener('click', () => {
-            chatMessages = [{ role: 'system', content: CHAT_CLEARED_GREETING_CONTENT, model: 'System' }];
-            currentSystemPrompt = "";
-            updateSystemPromptIndicator();
-            modalSystemPromptTextarea.value = ""; // Also clear modal's internal state
-            renderChatHistory(true);
-            promptInput.value = '';
-            adjustTextareaHeight();
+        function updateSystemPromptStatus() {
+            if (AppState.systemPrompt) {
+                elements.systemPromptStatus.textContent = 'Active';
+                elements.systemPromptStatus.classList.remove('inactive');
+                elements.systemPromptStatus.classList.add('active');
+            } else {
+                elements.systemPromptStatus.textContent = 'Inactive';
+                elements.systemPromptStatus.classList.remove('active');
+                elements.systemPromptStatus.classList.add('inactive');
+            }
+        }
 
-            controlsPanel.classList.remove('collapsed');
-            clearConfigureButton.classList.remove('visible');
-            chatHasStarted = false;
+        function handleSaveSystemPrompt() {
+            AppState.systemPrompt = elements.systemPromptTextarea.value.trim();
+            updateSystemPromptStatus();
+            updateStats(); // System prompt contributes to token count
+            showToast('System prompt saved!');
+        }
 
-            // Re-enable controls that might have been disabled by sendMessage()
-            promptInput.disabled = false;
-            sendButton.disabled = false;
-            modelSelect.disabled = false;
-            openSystemPromptModalButton.disabled = false;
+        function handleClearSystemPrompt() {
+            elements.systemPromptTextarea.value = '';
+            AppState.systemPrompt = '';
+            updateSystemPromptStatus();
+            updateStats();
+            showToast('System prompt editor cleared.');
+        }
+        
+        function handleClearChat() {
+            AppState.messages = [];
+            elements.chatMessages.innerHTML = ''; 
+            
+            AppState.systemPrompt = ''; 
+            elements.systemPromptTextarea.value = '';
+            updateSystemPromptStatus();
+            
+            addMessage('system',
+                `Chat history and custom instructions have been cleared.
+                <p>Configure your AI model and system prompt (optional), then start a new conversation!</p>`,
+                'System Reset'
+            );
+            updateStats(); // Recalculate stats
+            showToast('Chat history & system prompt cleared.');
+            elements.messageInput.focus();
+        }
 
-            promptInput.focus();
-        });
+        function exportChatToMarkdown() {
+            let markdown = `# AI Chat Export - ${new Date().toLocaleString()}\n\n`;
+            markdown += `**Model Used Most Recently:** ${AppState.currentModel.replace('openrouter:', '').replace('claude-3-7-sonnet', 'Claude 3.7 Sonnet').split('/').pop()}\n`;
+            if (AppState.systemPrompt) {
+                markdown += `**System Prompt (at time of export):**\n\`\`\`\n${AppState.systemPrompt}\n\`\`\`\n\n`;
+            }
+            markdown += "---\n\n";
 
-        openSystemPromptModalButton.addEventListener('click', openSystemPromptModal);
-        modalCloseButton.addEventListener('click', closeSystemPromptModal);
-        cancelModalSystemPromptButton.addEventListener('click', closeSystemPromptModal);
-        saveModalSystemPromptButton.addEventListener('click', handleSaveSystemPrompt);
-        clearModalSystemPromptButton.addEventListener('click', handleClearSystemPromptInModal);
-        copyModalSystemPromptButton.addEventListener('click', handleCopySystemPrompt);
-        systemPromptModalOverlay.addEventListener('click', (e) => {
-            if (e.target === systemPromptModalOverlay) closeSystemPromptModal();
-        });
+            AppState.messages.forEach(msg => {
+                const sender = msg.role.charAt(0).toUpperCase() + msg.role.slice(1);
+                let modelInfo = '';
+                if (msg.role === 'assistant' && msg.model) {
+                    modelInfo = ` (${msg.model.replace('openrouter:', '').replace('claude-3-7-sonnet', 'Claude 3.7 Sonnet').split('/').pop()})`;
+                } else if (msg.role === 'system' && msg.model) {
+                     modelInfo = ` (${msg.model})`;
+                }
+                
+                markdown += `**${sender}${modelInfo}** (_${formatTime(msg.timestamp)}_):\n\n`;
+                // For export, use raw content for assistant, basic text for user/system
+                // This simplistic export might not be perfect for complex markdown from AI
+                const contentToExport = msg.content;
+                contentToExport.split('\n').forEach(line => {
+                     markdown += `${line}\n`; // Keep original line breaks somewhat
+                });
+                markdown += `\n---\n\n`;
+            });
 
-        promptInput.addEventListener('input', adjustTextareaHeight);
-        promptInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-        });
-        sendButton.addEventListener('click', sendMessage);
+            const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ai-chat-export-${Date.now()}.md`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Chat exported as Markdown!');
+        }
 
-        renderChatHistory(true);
-        adjustTextareaHeight();
-        updateSystemPromptIndicator();
-        promptInput.focus();
+
+        // Event Listeners
+        function setupEventListeners() {
+            elements.sidebarToggle.addEventListener('click', toggleSidebar);
+            elements.sendBtn.addEventListener('click', sendMessageHandler);
+            elements.messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey && !e.metaKey) { // Simple Enter for mobile
+                    if (window.innerWidth < 768) {
+                         e.preventDefault();
+                         sendMessageHandler();
+                    }
+                }
+                if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                    e.preventDefault();
+                    sendMessageHandler();
+                }
+            });
+            elements.messageInput.addEventListener('input', autoResizeTextarea);
+            
+            elements.modelSelect.addEventListener('change', (e) => {
+                AppState.currentModel = e.target.value;
+                showToast(`Model changed to ${AppState.currentModel.split('/').pop()}`);
+            });
+
+            elements.saveSystemPrompt.addEventListener('click', handleSaveSystemPrompt);
+            elements.clearSystemPromptBtn.addEventListener('click', handleClearSystemPrompt);
+            elements.clearChatBtn.addEventListener('click', handleClearChat);
+            elements.exportChatBtn.addEventListener('click', exportChatToMarkdown);
+        }
+
+        // Initialization
+        function init() {
+            elements.modelSelect.value = AppState.currentModel;
+            updateSystemPromptStatus();
+            if (AppState.sidebarCollapsed) {
+                 elements.sidebar.classList.add('collapsed');
+            }
+            
+            addMessage('system',
+                `Welcome to <strong>AI Chat Explorer</strong>! 🚀
+                <p>Configure your preferred AI model and system prompt from the sidebar, then start chatting. Your conversation history will be maintained.</p>
+                <h3>Quick Tips:</h3>
+                <ul>
+                    <li>Use <kbd>Ctrl+Enter</kbd> (or <kbd>Cmd+Enter</kbd>) to send messages.</li>
+                    <li>The sidebar (☰) contains model settings and system prompt controls.</li>
+                    <li>Code blocks will be syntax highlighted and have a copy button.</li>
+                </ul>`,
+                'System Welcome'
+            );
+            updateStats(); // Initial stat calculation
+            setupEventListeners();
+            autoResizeTextarea(); // Initial size adjustment
+            elements.messageInput.focus();
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
 
     </script>
 </body>
