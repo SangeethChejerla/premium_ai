@@ -919,7 +919,7 @@
                 const response = await puter.ai.chat(content, { // Content is the last user message
                     model: activeChat.model,
                     messages: apiMessagesForHistory.slice(0, -1), // History EXCLUDES the current prompt
-                    max_tokens: 8192,
+                    max_tokens: 200000,
                     // stream: true // TODO: Implement streaming if desired
                 });
 
