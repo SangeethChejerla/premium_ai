@@ -913,13 +913,13 @@
 
                 console.log("Sending to Puter.ai. Model:", activeChat.model, "History items:", apiMessagesForHistory.length);
 
-                const apiOptions = { model: activeChat.model, max_tokens: 8192 }; // Max tokens from Pro
+                const apiOptions = { model: activeChat.model, max_tokens: 160000 }; // Max tokens from Pro
                 // Puter.ai.chat expects the prompt as first arg, and options (including history) as second
                 
                 const response = await puter.ai.chat(content, { // Content is the last user message
                     model: activeChat.model,
                     messages: apiMessagesForHistory.slice(0, -1), // History EXCLUDES the current prompt
-                    max_tokens: 200000,
+                    max_tokens: 160000,
                     // stream: true // TODO: Implement streaming if desired
                 });
 
