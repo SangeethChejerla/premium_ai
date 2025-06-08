@@ -1,0 +1,73 @@
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPT-4o Vision File Upload Interface</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #preview { margin-top: 20px; max-width: 100%; height: auto; border: 1px solid #ccc; }
+    #response { white-space: pre-wrap; margin-top: 20px; line-height: 1.6; }
+    .btn { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:disabled { background: #999; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>GPT-4o Vision File Upload Chat</h1>
+  <input type="file" id="fileInput" accept="image/*" />
+  <button id="analyzeBtn" class="btn" disabled>Analyze Image</button>
+  <div>
+    <img id="preview" src="" alt="Image preview will appear here" style="display: none;" />
+  </div>
+  <div id="response">Select an image to get started.</div>
+
+  <script src="https://js.puter.com/v2/"></script>
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const responseDiv = document.getElementById('response');
+    const previewImg = document.getElementById('preview');
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        const url = URL.createObjectURL(file);
+        previewImg.src = url;
+        previewImg.style.display = 'block';
+        analyzeBtn.disabled = false;
+        responseDiv.textContent = 'Ready to analyze.';
+      } else {
+        previewImg.src = '';
+        previewImg.style.display = 'none';
+        analyzeBtn.disabled = true;
+        responseDiv.textContent = 'Select an image to get started.';
+      }
+    });
+
+    analyzeBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      responseDiv.textContent = 'Analyzing image...';
+
+      try {
+        const response = await puter.ai.chat(
+          'What do you see in this image?',
+          file,
+          { model: 'openrouter:openai/o3', stream: true }
+        );
+
+        responseDiv.textContent = '';
+        for await (const part of response) {
+          if (part?.text) responseDiv.textContent += part.text;
+        }
+      } catch (err) {
+        console.error(err);
+        responseDiv.textContent = 'Error analyzing image: ' + (err?.message || err);
+      }
+    });
+  </script>
+</body>
+</html>
