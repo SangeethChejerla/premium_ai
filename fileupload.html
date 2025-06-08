@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPT-4o PDF Upload Interface</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    #response { white-space: pre-wrap; margin-top: 20px; line-height: 1.6; }
+    .btn { padding: 10px 20px; background: #007bff; color: #fff; border: none; border-radius: 4px; cursor: pointer; }
+    .btn:disabled { background: #999; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>GPT-4o PDF Upload Chat</h1>
+  <input type="file" id="fileInput" accept=".pdf" />
+  <button id="analyzeBtn" class="btn" disabled>Analyze PDF</button>
+  <div id="response">Select a PDF file to get started.</div>
+
+  <!-- Include the Puter.js library -->
+  <script src="https://js.puter.com/v2/"></script>
+  <!-- Include pdf.js for PDF text extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+  <script>
+    // Set the worker source for pdf.js
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.worker.min.js';
+
+    // Get DOM elements
+    const fileInput = document.getElementById('fileInput');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const responseDiv = document.getElementById('response');
+
+    // Enable the analyze button when a PDF is selected
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file && file.type === 'application/pdf') {
+        // Optional: Check file size (e.g., max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          responseDiv.textContent = 'PDF too large (max 5MB).';
+          analyzeBtn.disabled = true;
+          return;
+        }
+        analyzeBtn.disabled = false;
+        responseDiv.textContent = 'Ready to analyze.';
+      } else {
+        analyzeBtn.disabled = true;
+        responseDiv.textContent = 'Please select a valid PDF file.';
+      }
+    });
+
+    // Analyze the PDF when the button is clicked
+    analyzeBtn.addEventListener('click', async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      responseDiv.textContent = 'Extracting text from PDF...';
+
+      try {
+        // Extract text from PDF
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const pageText = content.items.map(item => item.str).join(' ');
+          text += pageText + '\n';
+        }
+
+        if (!text.trim()) {
+          throw new Error('No text could be extracted from the PDF. Ensure the PDF contains selectable text.');
+        }
+
+        responseDiv.textContent = 'Analyzing extracted text...';
+
+        // Call the Puter.js AI chat function with extracted text
+        const response = await puter.ai.chat(
+          'Summarize the following document in genius notes format (concise bullet points capturing key insights, skills, experiences, and projects): ' + text,
+          null, // No file input, as we're sending text
+          { model: 'openrouter:openai/o3', stream: true } // Text-compatible model
+        );
+
+        // Display the streaming response
+        responseDiv.textContent = '';
+        for await (const part of response) {
+          if (part?.text) responseDiv.textContent += part.text;
+        }
+      } catch (err) {
+        console.error('Error details:', err);
+        responseDiv.textContent = 'Error analyzing PDF: ' + (err.message || JSON.stringify(err, null, 2));
+      }
+    });
+  </script>
+</body>
+</html>
