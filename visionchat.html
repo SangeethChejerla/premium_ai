@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vision AI Chat Interface</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Indie+Flower&display=swap" rel="stylesheet">
+  
+  <!-- Added for Markdown Syntax Highlighting -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+  <style>
+    :root {
+      --bg-color: #000000;
+      --text-color: #e0e0e0;
+      --primary-color: #00aaff;
+      --container-bg: rgba(10, 10, 15, 0.7);
+      --border-color: rgba(255, 255, 255, 0.2);
+      --input-bg: rgba(255, 255, 255, 0.05);
+      --ai-message-bg: rgba(255, 255, 255, 0.08);
+      --user-message-bg: rgba(0, 170, 255, 0.1);
+      --font-main: 'Indie Flower', cursive;
+      --code-bg: #282c34; /* atom-one-dark background */
+    }
+
+    * {
+      box-sizing: border-box;
+      scrollbar-width: thin;
+      scrollbar-color: var(--primary-color) transparent;
+    }
+    *::-webkit-scrollbar {
+      width: 8px;
+    }
+    *::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    *::-webkit-scrollbar-thumb {
+      background-color: var(--primary-color);
+      border-radius: 20px;
+      border: 3px solid transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      font-family: var(--font-main);
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-size: 1.2rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Aurora Background Effect */
+    body::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 120vw;
+      height: 120vh;
+      background-image: 
+        radial-gradient(circle, rgba(0, 170, 255, 0.3) 0%, transparent 40%),
+        radial-gradient(circle, rgba(255, 0, 170, 0.2) 50%, transparent 80%);
+      border-radius: 50%;
+      filter: blur(100px);
+      animation: spin 40s linear infinite alternate;
+      z-index: -1;
+    }
+
+    @keyframes spin {
+      from { transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+      to { transform: translate(-50%, -50%) rotate(180deg) scale(1.2); }
+    }
+
+    .chat-container {
+      background: var(--container-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      width: 100%;
+      height: 100%;
+      max-width: 800px;
+      max-height: 90vh;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #chat-log {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+    }
+
+    .chat-message {
+      display: flex;
+      gap: 15px;
+      max-width: 85%;
+      animation: fadeIn 0.5s ease-out forwards;
+      position: relative;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); }}
+
+    .chat-message .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    
+    .message-content {
+      padding: 15px 20px;
+      border-radius: 15px;
+      line-height: 1.7;
+    }
+    
+    .ai-message { align-self: flex-start; }
+    .ai-message .avatar { background: var(--primary-color); }
+    .ai-message .message-content { background: var(--ai-message-bg); border-top-left-radius: 0;}
+    
+    .user-message { align-self: flex-end; flex-direction: row-reverse; }
+    .user-message .avatar { background: #888; }
+    .user-message .message-content { background: var(--user-message-bg); border-top-right-radius: 0; }
+
+    .message-content img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+    
+    /* --- Styles for Rendered Markdown --- */
+    .message-content h1, .message-content h2, .message-content h3 { color: var(--primary-color); margin-top: 1.5em; margin-bottom: 0.5em; }
+    .message-content h1 { font-size: 1.8rem; }
+    .message-content h2 { font-size: 1.5rem; }
+    .message-content h3 { font-size: 1.3rem; }
+    .message-content p { margin: 0 0 1em 0; }
+    .message-content ul, .message-content ol { padding-left: 25px; margin-bottom: 1em;}
+    .message-content li { margin-bottom: 0.5em; }
+    .message-content a { color: var(--primary-color); text-decoration: none; }
+    .message-content a:hover { text-decoration: underline; }
+    .message-content table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 1rem; }
+    .message-content th, .message-content td { border: 1px solid var(--border-color); padding: 8px 12px; text-align: left; }
+    .message-content th { background-color: rgba(255, 255, 255, 0.1); }
+    .message-content code:not(pre > code) { background-color: var(--input-bg); padding: 2px 5px; border-radius: 4px; font-family: monospace; font-size: 1rem; }
+    .message-content .code-block-wrapper { position: relative; margin: 1em 0; }
+    .message-content pre { margin: 0; }
+    .message-content pre code.hljs { padding: 20px; border-radius: 10px; font-family: monospace; font-size: 1rem; line-height: 1.6; }
+    /* --- End Markdown Styles --- */
+
+    /* --- Copy Button Styles --- */
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: -45px;
+        width: 32px; height: 32px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-color);
+        border: 1px solid var(--border-color);
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: all 0.2s ease-in-out;
+    }
+    .ai-message:hover .copy-btn { opacity: 1; transform: scale(1); }
+    .copy-btn:hover { background: var(--primary-color); border-color: var(--primary-color); }
+    .copy-btn svg { width: 16px; height: 16px; }
+
+    .copy-code-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: rgba(255, 255, 255, 0.15);
+        color: var(--text-color);
+        border: none;
+        border-radius: 6px;
+        padding: 5px 8px;
+        font-family: sans-serif;
+        font-size: 0.8rem;
+        cursor: pointer;
+        opacity: 0;
+        transition: all 0.2s ease-in-out;
+    }
+    .code-block-wrapper:hover .copy-code-btn { opacity: 1; }
+    .copy-code-btn:hover { background: var(--primary-color); }
+    /* --- End Copy Button Styles --- */
+
+    #input-area {
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      background: rgba(0,0,0,0.2);
+    }
+    
+    #file-upload-btn, #send-btn {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        border: 1px solid var(--border-color);
+        background: var(--input-bg);
+        color: var(--text-color);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.2s;
+    }
+    #file-upload-btn:hover, #send-btn:hover { background: var(--primary-color); border-color: var(--primary-color); transform: scale(1.1); }
+    #send-btn:disabled { background: #444; cursor: not-allowed; transform: none; border-color: #555; }
+
+    #promptInput {
+      flex-grow: 1; background: transparent; border: none; padding: 12px 15px; color: var(--text-color);
+      font-family: var(--font-main); font-size: 1.2rem; resize: none; max-height: 200px; overflow-y: auto; outline: none;
+    }
+    
+    #model-switcher {
+        background: var(--input-bg); color: var(--text-color); border: 1px solid var(--border-color);
+        border-radius: 8px; padding: 5px 10px; font-family: var(--font-main); font-size: 0.9rem;
+        cursor: pointer; margin-bottom: 5px;
+    }
+
+    .typing::after {
+        content: '▋'; animation: blink 1s step-end infinite;
+        color: var(--primary-color); margin-left: 2px;
+    }
+    @keyframes blink { 50% { opacity: 0; }}
+    
+    .loader {
+        border: 3px solid var(--border-color); border-top: 3px solid var(--primary-color);
+        border-radius: 50%; width: 25px; height: 25px; animation: spin-loader 1s linear infinite;
+    }
+    @keyframes spin-loader { 100% { transform: rotate(360deg); }}
+
+    #fullscreenBtn {
+        position: fixed; top: 20px; right: 20px; background: var(--container-bg); border: 1px solid var(--border-color);
+        color: var(--text-color); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex;
+        justify-content: center; align-items: center; z-index: 100; transition: all 0.3s ease; backdrop-filter: blur(5px);
+    }
+    #fullscreenBtn:hover { background: var(--primary-color); border-color: var(--primary-color); transform: scale(1.1); }
+    #fullscreenBtn svg { width: 22px; height: 22px; fill: currentColor; }
+
+    @media (max-width: 850px) {
+        .chat-container { max-height: 100vh; border-radius: 0; border: none; }
+        #fullscreenBtn { top: 10px; right: 10px; }
+        .copy-btn { right: 5px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <button id="fullscreenBtn" title="Toggle Fullscreen">
+    <svg id="fullscreenIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>
+  </button>
+  
+  <div class="chat-container">
+    <div id="chat-log">
+      <!-- Messages will be appended here -->
+    </div>
+    
+    <div id="input-area">
+        <div style="display:flex; flex-direction:column; gap: 5px; align-items:center;">
+          <button id="file-upload-btn" title="Upload Image">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/><path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/></svg>
+          </button>
+          <select id="model-switcher">
+ <option value="openrouter:openai/o3">OpenAI O3</option>
+  <option value="openrouter:google/gemini-2.5-pro-preview-06-05">Gemini 2.5 pro</option>
+<option value="openrouter:anthropic/claude-opus-4">Anthropic Claude 4 opus</option>
+          </select>
+        </div>
+      <textarea id="promptInput" placeholder="Upload an image, then ask a question..." rows="1"></textarea>
+      <button id="send-btn" title="Send Message" disabled>
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16"><path d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11ZM6.636 10.07l2.761 4.338L14.13 2.576 6.636 10.07Zm6.787-8.201L1.591 6.602l4.339 2.76 7.494-7.493Z"/></svg>
+      </button>
+      <input type="file" id="fileInput" accept="image/*" style="display: none;" />
+    </div>
+  </div>
+
+  <script src="https://js.puter.com/v2/"></script>
+  <!-- Added for Markdown Parsing and Syntax Highlighting -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <script>
+    const chatLog = document.getElementById('chat-log');
+    const promptInput = document.getElementById('promptInput');
+    const sendBtn = document.getElementById('send-btn');
+    const fileUploadBtn = document.getElementById('file-upload-btn');
+    const fileInput = document.getElementById('fileInput');
+    const modelSwitcher = document.getElementById('model-switcher');
+    
+    let currentFile = null;
+
+    const addMessage = (sender, content) => {
+      const messageId = `msg-${Date.now()}`;
+      const messageDiv = document.createElement('div');
+      messageDiv.classList.add('chat-message', `${sender}-message`);
+      messageDiv.id = messageId;
+      
+      const avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+      avatar.textContent = sender === 'user' ? '👤' : '🤖';
+
+      const messageContent = document.createElement('div');
+      messageContent.classList.add('message-content');
+      if (typeof content === 'string') {
+        messageContent.textContent = content;
+      } else if (content) {
+        messageContent.appendChild(content);
+      }
+      
+      messageDiv.appendChild(avatar);
+      messageDiv.appendChild(messageContent);
+      chatLog.appendChild(messageDiv);
+      chatLog.scrollTop = chatLog.scrollHeight;
+      return messageId;
+    };
+    
+    const setAiMessageState = (id, state) => {
+        const messageDiv = document.getElementById(id);
+        const contentDiv = messageDiv.querySelector('.message-content');
+        contentDiv.innerHTML = ''; // Clear previous content
+
+        if (state === 'loading') {
+            const loader = document.createElement('div');
+            loader.className = 'loader';
+            contentDiv.appendChild(loader);
+        } else if (state === 'typing') {
+            contentDiv.classList.add('typing');
+        }
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    
+    const finalizeAiMessage = (id, rawMarkdown) => {
+        const messageDiv = document.getElementById(id);
+        if (!messageDiv) return;
+        
+        const contentDiv = messageDiv.querySelector('.message-content');
+        contentDiv.classList.remove('typing');
+        contentDiv.dataset.rawContent = rawMarkdown;
+
+        // Parse markdown and sanitize it
+        contentDiv.innerHTML = marked.parse(rawMarkdown, { breaks: true, gfm: true });
+        
+        // Add copy button for the whole message
+        const copyAllBtn = document.createElement('button');
+        copyAllBtn.className = 'copy-btn';
+        copyAllBtn.title = 'Copy response';
+        copyAllBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`;
+        copyAllBtn.addEventListener('click', (e) => {
+            navigator.clipboard.writeText(contentDiv.dataset.rawContent);
+            e.target.closest('button').innerHTML = '✅';
+            setTimeout(() => {
+                e.target.closest('button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/></svg>`;
+            }, 1500);
+        });
+        messageDiv.appendChild(copyAllBtn);
+
+        // Add copy buttons to code blocks and highlight them
+        contentDiv.querySelectorAll('pre').forEach(pre => {
+            // 1. Wrap pre in a div for positioning
+            const wrapper = document.createElement('div');
+            wrapper.className = 'code-block-wrapper';
+            pre.parentNode.insertBefore(wrapper, pre);
+            wrapper.appendChild(pre);
+
+            // 2. Add copy button
+            const copyCodeBtn = document.createElement('button');
+            copyCodeBtn.className = 'copy-code-btn';
+            copyCodeBtn.textContent = 'Copy';
+            wrapper.appendChild(copyCodeBtn);
+            
+            copyCodeBtn.addEventListener('click', () => {
+                const code = pre.querySelector('code').innerText;
+                navigator.clipboard.writeText(code);
+                copyCodeBtn.textContent = 'Copied!';
+                setTimeout(() => { copyCodeBtn.textContent = 'Copy'; }, 1500);
+            });
+            
+            // 3. Highlight code
+            const codeEl = pre.querySelector('code');
+            if(codeEl) {
+                hljs.highlightElement(codeEl);
+            }
+        });
+        
+        chatLog.scrollTop = chatLog.scrollHeight;
+    }
+    
+    fileUploadBtn.addEventListener('click', () => fileInput.click());
+    
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files[0];
+      if (file) {
+        currentFile = file;
+        
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        
+        const contentWrapper = document.createElement('div');
+        contentWrapper.textContent = `Image uploaded: ${file.name}`;
+        contentWrapper.appendChild(img);
+
+        addMessage('user', contentWrapper);
+        promptInput.placeholder = "Great! Now ask a question about the image.";
+        sendBtn.disabled = false;
+        promptInput.focus();
+      }
+    });
+
+    const handleSend = async () => {
+        if (!currentFile) {
+            alert('Please upload an image first.');
+            return;
+        }
+        const userPrompt = promptInput.value.trim();
+        if (!userPrompt) return;
+        
+        addMessage('user', userPrompt);
+        promptInput.value = '';
+        promptInput.style.height = 'auto';
+        sendBtn.disabled = true;
+        
+        const aiMessageId = addMessage('ai', '');
+        setAiMessageState(aiMessageId, 'loading');
+
+        try {
+            const selectedModel = modelSwitcher.value;
+            const response = await puter.ai.chat(
+                userPrompt,
+                currentFile,
+                { model: selectedModel, stream: true }
+            );
+
+            setAiMessageState(aiMessageId, 'typing');
+            
+            let fullResponse = "";
+            for await (const part of response) {
+                if (part?.text) {
+                    fullResponse += part.text;
+                    // We render at the end, but you could optionally render chunks here for live markdown
+                    // For now, we just keep the typing indicator
+                }
+            }
+            finalizeAiMessage(aiMessageId, fullResponse);
+
+        } catch (err) {
+            console.error(err);
+            const errorMessage = 'Sorry, an error occurred: ' + (err?.message || err);
+            finalizeAiMessage(aiMessageId, `**Error**\n\n\`\`\`\n${errorMessage}\n\`\`\``);
+        } finally {
+            sendBtn.disabled = false;
+            promptInput.focus();
+        }
+    };
+    
+    sendBtn.addEventListener('click', handleSend);
+    promptInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    });
+
+    promptInput.addEventListener('input', () => {
+        promptInput.style.height = 'auto';
+        promptInput.style.height = (promptInput.scrollHeight) + 'px';
+    });
+
+    const fullscreenBtn = document.getElementById('fullscreenBtn');
+    const fsEnterIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/></svg>`;
+    const fsExitIcon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 16h3v3h2v-5H5v2zm3-8H5v2h5V5H8v3zm6 11h2v-3h3v-2h-5v5zm2-11V5h-2v5h5V8h-3z"/></svg>`;
+    fullscreenBtn.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    });
+    document.addEventListener('fullscreenchange', () => {
+      fullscreenBtn.innerHTML = document.fullscreenElement ? fsExitIcon : fsEnterIcon;
+    });
+
+    // Initial welcome message
+    const welcomeText = `### Hello! I'm a Vision AI. 
+    
+Please upload an image using the button on the left, and then we can chat about it. I can now understand and respond with rich text formatting like:
+*   Lists
+*   **Bold** and *Italics*
+*   And even code blocks!
+
+\`\`\`javascript
+console.log("Ready when you are!");
+\`\`\``;
+    const initialAiId = addMessage('ai', '');
+    finalizeAiMessage(initialAiId, welcomeText);
+  </script>
+</body>
+</html>
