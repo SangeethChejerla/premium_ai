@@ -17,7 +17,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/html.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
-    <script src="https://js.puter.com/v2/"></script> <!-- Puter.js Library -->
+    <script src="https://js.puter.com/v2/"></script>
     <link href="https://fonts.cdnfonts.com/css/open-dyslexic" rel="stylesheet">
 
     <style>
@@ -43,7 +43,6 @@
         ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 3px; }
         ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.3); }
 
-        /* General Message Styling */
         .message {
             margin-bottom: 1.5rem;
             animation: messageSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -79,7 +78,6 @@
         .copy-btn.copied { background: var(--success); color: white; border-color: var(--success); }
         .copy-btn svg { width: 12px; height: 12px; }
 
-        /* Enhanced Markdown & Content Styling */
         .message-content {
             background: var(--bg-secondary-pro); border-radius: 0.5rem;
             padding: 1rem 1.25rem; border: 1px solid var(--border-color-pro);
@@ -122,7 +120,6 @@
             font-size: .85em; font-weight: 700; line-height: 1; padding: 3px 5px;
         }
         
-        /* Blinking cursor for streaming */
         .blinking-cursor {
             display: inline-block;
             width: 8px;
@@ -136,7 +133,6 @@
         }
         @keyframes blink { 50% { opacity: 0; } }
 
-        /* Enhanced Code Block UX */
         .message-content pre {
             background: #1e1e1e !important; border: 1px solid var(--border-color-pro);
             border-radius: 0.5rem; margin: 1.5rem 0; overflow: hidden;
@@ -163,7 +159,6 @@
             font-family: 'SF Mono', 'Cascadia Code', 'Roboto Mono', monospace;
         }
         
-        /* Toast Notifications */
         .toast-container { position: fixed; bottom: 1rem; right: 1rem; z-index: 10000; display: flex; flex-direction: column-reverse; gap: 0.5rem; }
         .toast {
             background: #202124; border: 1px solid #5F6368; border-radius: 0.5rem;
@@ -179,10 +174,8 @@
 </head>
 <body class="bg-black text-white overflow-hidden h-screen">
     <div id="app" class="h-screen bg-black text-white flex overflow-hidden">
-        <!-- Sidebar and Backdrop -->
         <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden hidden" onclick="toggleSidebar()"></div>
         <div id="sidebar" class="fixed lg:relative inset-y-0 left-0 z-50 w-80 bg-black border-r border-white/20 transform transition-transform duration-300 ease-in-out flex flex-col -translate-x-full lg:translate-x-0">
-            <!-- Header -->
             <div class="p-6 border-b border-white/20">
                 <div class="flex items-center justify-between">
                     <div>
@@ -194,37 +187,32 @@
                     </button>
                 </div>
             </div>
-
-            <!-- Content -->
             <div class="flex-1 p-6 overflow-y-auto space-y-6">
                 <button onclick="createNewChat()" class="w-full flex items-center justify-center gap-3 p-3 bg-white text-black rounded-lg hover:bg-opacity-90 transition-colors font-medium">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path></svg>
                     New Chat
                 </button>
-                
                 <div class="space-y-3">
                     <h3 class="text-xs font-semibold text-white/60 uppercase tracking-wider">Conversations</h3>
                     <div id="conversations-list" class="space-y-2 max-h-64 overflow-y-auto"></div>
                 </div>
-
                 <div class="space-y-3">
                     <h3 class="text-xs font-semibold text-white/60 uppercase tracking-wider">Model</h3>
                     <select id="model-select" class="w-full p-3 bg-black border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-white/40">
-                       <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
-                            <option value="openrouter:google/gemini-2.5-pro-preview-06-05">Gemini 2.5 pro</option>
-                            <option value="openrouter:x-ai/grok-3-beta">Grok3 </option>
-                            <option value="openrouter:anthropic/claude-sonnet-4">Anthropic Claude 4 Sonnet</option>
-                             <option value="openrouter:anthropic/claude-opus-4">Anthropic Claude 4 opus</option>
-                              <option value="openrouter:openai/gpt-4o-2024-11-20">4o</option>
-                            <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
-                            <option value="openrouter:openai/o3">OpenAI O3</option>
-                            <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
-                            <option value ="openrouter:openai/gpt-4.1"> gpt 4.1</option>
-                            <option value="openrouter:openai/codex-mini">OpenAI Codex Mini</option>
-                            <option value="openrouter:deepseek/deepseek-r1-0528"> DeepseekR1 </option>
+                        <option value="claude-3-7-sonnet">Anthropic Claude 3.7 Sonnet</option>
+                        <option value="openrouter:google/gemini-2.5-pro-preview-06-05">Gemini 2.5 pro</option>
+                        <option value="openrouter:x-ai/grok-3-beta">Grok3 </option>
+                        <option value="openrouter:anthropic/claude-sonnet-4">Anthropic Claude 4 Sonnet</option>
+                        <option value="openrouter:anthropic/claude-opus-4">Anthropic Claude 4 opus</option>
+                        <option value="openrouter:openai/gpt-4o-2024-11-20">4o</option>
+                        <option value="openrouter:openai/o4-mini-high">OpenAI o4-mini-high</option>
+                        <option value="openrouter:openai/o3">OpenAI O3</option>
+                        <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                        <option value="openrouter:openai/gpt-4.1"> gpt 4.1</option>
+                        <option value="openrouter:openai/codex-mini">OpenAI Codex Mini</option>
+                        <option value="openrouter:deepseek/deepseek-r1-0528"> DeepseekR1 </option>
                     </select>
                 </div>
-
                 <div class="space-y-3">
                     <h3 class="text-xs font-semibold text-white/60 uppercase tracking-wider">Statistics</h3>
                     <div class="bg-black/50 border border-white/20 rounded-lg p-4 space-y-2 text-sm">
@@ -234,8 +222,6 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Footer -->
             <div class="p-6 border-t border-white/20">
                 <button onclick="deleteChat()" id="delete-btn" class="w-full flex items-center justify-center gap-3 p-3 bg-black border border-white/20 text-white rounded-lg hover:bg-white/10 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
@@ -243,8 +229,6 @@
                 </button>
             </div>
         </div>
-
-        <!-- Main Content -->
         <div class="flex-1 flex flex-col min-w-0">
             <header class="p-4 border-b border-white/20 flex items-center justify-between bg-black">
                 <div class="flex items-center gap-4">
@@ -264,9 +248,7 @@
                     </button>
                 </div>
             </header>
-
             <main id="messages-container" class="flex-1 overflow-y-auto p-6"></main>
-            
             <footer id="input-area" class="p-6 border-t border-white/20 bg-black">
                 <div class="flex gap-3 items-end">
                     <div class="flex-1 relative">
@@ -282,7 +264,6 @@
     <div id="toast-container" class="toast-container"></div>
 
     <script>
-        // --- STATE & DOM ELEMENTS ---
         let state = {
             chats: [],
             activeChatId: null,
@@ -310,18 +291,17 @@
             fullscreenCompress: document.getElementById('fullscreen-compress'),
             toastContainer: document.getElementById('toast-container')
         };
-        
-        // --- UTILITY & HELPER FUNCTIONS ---
+
         const formatTime = (timestamp) => new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const formatRelativeTime = (timestamp) => {
-            const diff = (Date.now() - timestamp) / 60000; // minutes
+            const diff = (Date.now() - timestamp) / 60000;
             if (diff < 1) return 'now'; if (diff < 60) return `${Math.floor(diff)}m`;
             if (diff < 1440) return `${Math.floor(diff / 60)}h`;
             return `${Math.floor(diff / 1440)}d`;
         };
         const estimateTokens = (text) => text ? Math.ceil(text.length / 4) : 0;
         const getActiveChat = () => state.chats.find(chat => chat.id === state.activeChatId);
-        
+
         function updateStats() {
             const activeChat = getActiveChat();
             elements.messageCount.textContent = activeChat ? activeChat.messages.length : 0;
@@ -339,7 +319,7 @@
         function autoResizeTextarea() {
             const textarea = elements.messageInput;
             textarea.style.height = 'auto';
-            textarea.style.height = `${Math.min(textarea.scrollHeight, 192)}px`; // max-h-48
+            textarea.style.height = `${Math.min(textarea.scrollHeight, 192)}px`;
         }
 
         function updateSendButton() {
@@ -349,7 +329,7 @@
         function scrollToBottom() {
             elements.messagesContainer.scrollTo({ top: elements.messagesContainer.scrollHeight, behavior: 'smooth' });
         }
-        
+
         function showToast(message, type = 'success', duration = 3000) {
             const toast = document.createElement('div');
             toast.className = `toast ${type}`;
@@ -367,7 +347,7 @@
                 if (feedbackElement) {
                     const originalHTML = feedbackElement.innerHTML;
                     const originalWidth = feedbackElement.offsetWidth;
-                    feedbackElement.style.width = `${originalWidth}px`; // Fix width during text change
+                    feedbackElement.style.width = `${originalWidth}px`;
                     feedbackElement.classList.add('copied');
                     feedbackElement.innerHTML = `
                         <svg class="w-[14px] h-[14px]" fill="currentColor" viewBox="0 0 16 16"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
@@ -375,19 +355,18 @@
                     setTimeout(() => {
                         feedbackElement.classList.remove('copied');
                         feedbackElement.innerHTML = originalHTML;
-                        feedbackElement.style.width = ''; // Unset fixed width
+                        feedbackElement.style.width = '';
                     }, 1500);
                 }
             } catch (err) { showToast('Failed to copy.', 'error'); }
         }
 
-        // --- CORE UI & STATE MANAGEMENT ---
         function toggleSidebar() {
             state.sidebarOpen = !state.sidebarOpen;
             elements.sidebar.classList.toggle('-translate-x-full', !state.sidebarOpen);
             elements.sidebarBackdrop.classList.toggle('hidden', !state.sidebarOpen);
         }
-        
+
         function createNewChat() {
             const newChat = {
                 id: `chat_${Date.now()}`, title: 'New Chat', messages: [],
@@ -406,7 +385,7 @@
             renderUI();
             elements.messageInput.focus();
         }
-        
+
         function deleteChat() {
             const chat = getActiveChat();
             if (chat && confirm(`Delete "${chat.title}"? This is permanent.`)) {
@@ -415,7 +394,7 @@
                 renderUI();
             }
         }
-        
+
         function addMessageToState(role, content, model = null) {
             const activeChat = getActiveChat();
             if (!activeChat) return null;
@@ -430,7 +409,6 @@
             return message;
         }
 
-        // --- RENDERING ---
         function renderMarkdown(text) {
             marked.setOptions({
                 highlight: (code, lang) => {
@@ -496,8 +474,6 @@
 
         function renderUI() {
             const activeChat = getActiveChat();
-            
-            // Render Conversations List
             elements.conversationsList.innerHTML = state.chats.length === 0 
                 ? `<div class="p-4 text-center text-sm text-white/40 border border-dashed border-white/20 rounded-lg">No chats yet</div>`
                 : state.chats.map(chat => `
@@ -506,7 +482,6 @@
                         <span class="text-xs opacity-60 ml-2 flex-shrink-0">${formatRelativeTime(chat.lastUpdatedAt)}</span>
                     </button>`).join('');
 
-            // Render Messages
             elements.messagesContainer.innerHTML = '';
             if (activeChat) {
                 elements.chatTitle.textContent = activeChat.title;
@@ -526,7 +501,6 @@
             scrollToBottom();
         }
 
-        // --- CORE LOGIC & EVENT HANDLERS ---
         async function handleSend() {
             const content = elements.messageInput.value.trim();
             const activeChat = getActiveChat();
@@ -541,15 +515,16 @@
             elements.messagesContainer.appendChild(renderMessage(userMessage));
             scrollToBottom();
 
+            // Prepare full history including the new user message
+            const history = activeChat.messages.map(m => ({ role: m.role, content: m.content }));
+
             const aiMessage = addMessageToState('assistant', '', activeChat.model);
             elements.messagesContainer.appendChild(renderMessage(aiMessage, true));
             scrollToBottom();
 
             try {
-                const history = activeChat.messages.slice(0, -2).map(m => ({ role: m.role, content: m.content }));
-                const responseStream = await puter.ai.chat(content, {
+                const responseStream = await puter.ai.chat(history, {
                     model: activeChat.model,
-                    messages: history,
                     stream: true
                 });
 
@@ -557,12 +532,11 @@
                 for await (const part of responseStream) {
                     if (part?.text) {
                         accumulatedContent += part.text;
-                        aiMessage.content = accumulatedContent; // Update state in real-time
+                        aiMessage.content = accumulatedContent;
                         updateMessageContent(aiMessage.id, accumulatedContent, false);
                     }
                 }
-                updateMessageContent(aiMessage.id, accumulatedContent, true); // Final render without cursor
-
+                updateMessageContent(aiMessage.id, accumulatedContent, true);
             } catch (error) {
                 console.error('API Stream Error:', error);
                 const errorMsg = `API Error: ${error.message || 'The stream was interrupted or failed.'}`;
@@ -574,12 +548,11 @@
                 state.isLoading = false;
                 updateSendButton();
                 elements.messageInput.focus();
-                renderConversationsList(); // Update timestamps
+                renderUI();
                 updateStats();
             }
         }
-        
-        // --- GLOBAL EVENT HANDLERS (for onclick) ---
+
         window.copyMessageContent = (button) => {
             const contentEl = button.closest('.message').querySelector('.message-content');
             copyToClipboard(contentEl.innerText, button);
@@ -605,7 +578,7 @@
         window.deleteChat = deleteChat;
         window.selectChat = selectChat;
         window.exportChat = () => {
-             const activeChat = getActiveChat();
+            const activeChat = getActiveChat();
             if (!activeChat) return;
             let markdown = `# Chat: ${activeChat.title}\n\n**Model:** ${activeChat.model}\n\n---\n\n`;
             activeChat.messages.forEach(msg => {
@@ -619,8 +592,7 @@
             a.click();
             URL.revokeObjectURL(a.href);
         };
-        
-        // --- INITIALIZATION ---
+
         document.addEventListener('DOMContentLoaded', () => {
             elements.messageInput.addEventListener('input', () => {
                 autoResizeTextarea();
@@ -638,7 +610,6 @@
             });
 
             setInterval(() => { updateUptime(); updateStats(); }, 1000);
-            
             renderUI();
             elements.messageInput.focus();
         });
