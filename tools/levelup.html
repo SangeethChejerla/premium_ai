@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oreki Language Mastery - Production</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.11/dist/purify.min.js"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .prose-invert a { color: #93c5fd; }
+        .prose-invert strong { color: #f9fafb; }
+        .chat-bubble { transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out; }
+    </style>
+</head>
+<body class="bg-black text-white font-['Inter'] antialiased">
+    <div class="min-h-screen p-4 md:p-8">
+        <!-- Header -->
+        <header class="text-center mb-8 relative">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                Oreki Language Mastery
+            </h1>
+            <p class="text-lg text-gray-400">Master English with Houtarou Oreki's nuanced, energy-conserving philosophy</p>
+            <div class="flex items-center justify-center mt-4 gap-2">
+                <span class="text-sm text-gray-500">Energy Conservation:</span>
+                <div class="w-48 h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div id="energyBar" class="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500" style="width: 85%"></div>
+                </div>
+                <span id="energyPercent" class="text-sm text-gray-400">85%</span>
+            </div>
+            <button onclick="toggleSettingsModal(true)" class="absolute top-0 right-0 p-2 text-gray-500 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            </button>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto">
+            <!-- Theme Input Section -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mb-6">
+                <h2 class="text-xl font-semibold mb-4">What tedious topic must we explore today?</h2>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <input type="text" id="themeInput" placeholder="e.g., 'a cryptic note', 'a missing item', 'planning a trip'" class="flex-1 px-4 py-3 bg-black border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500 text-white placeholder-gray-500">
+                    <select id="modelSelect" class="px-4 py-3 bg-black border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500 text-white">
+                        <option value="openrouter:anthropic/claude-opus-4">Anthropic Claude 4 opus</option>
+                        <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                        <option value="openrouter:google/gemini-2.5-pro-preview-06-05">Gemini 2.5 pro</option>
+
+                        <option value="openrouter:deepseek/deepseek-r1-0528"> DeepseekR1 </option>
+
+                    </select>
+                    <button onclick="generateContent()" id="generateBtn" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <span>Generate</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex gap-4 mb-6 overflow-x-auto pb-2">
+                <button class="tab-btn active" onclick="switchTab(event, 'phrases')">Oreki-Style Phrases</button>
+                <button class="tab-btn" onclick="switchTab(event, 'saved')">Saved Phrases</button>
+                <button class="tab-btn" onclick="switchTab(event, 'conversations')">Character Conversations</button>
+                <button class="tab-btn" onclick="switchTab(event, 'practice')">Practice Mode</button>
+            </div>
+
+            <!-- Content Sections -->
+            <div id="phrasesSection" class="content-section"></div>
+            <div id="savedSection" class="content-section hidden"></div>
+            <div id="conversationsSection" class="content-section hidden"></div>
+            <div id="practiceSection" class="content-section hidden"></div>
+
+             <!-- Learning Progress -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 mt-6">
+                <h3 class="text-xl font-semibold mb-4">Energy Conservation Progress</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="text-center p-4 bg-black border border-gray-700 rounded-lg"><p class="text-3xl font-bold text-purple-400" id="phrasesLearned">0</p><p class="text-sm text-gray-400">Phrases Generated</p></div>
+                    <div class="text-center p-4 bg-black border border-gray-700 rounded-lg"><p class="text-3xl font-bold text-yellow-400" id="phrasesSaved">0</p><p class="text-sm text-gray-400">Phrases Favorited</p></div>
+                    <div class="text-center p-4 bg-black border border-gray-700 rounded-lg"><p class="text-3xl font-bold text-blue-400" id="conversationsRead">0</p><p class="text-sm text-gray-400">Conversations Analyzed</p></div>
+                    <div class="text-center p-4 bg-black border border-gray-700 rounded-lg"><p class="text-3xl font-bold text-green-400" id="practiceScore">N/A</p><p class="text-sm text-gray-400">Last Practice Score</p></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-black bg-opacity-70 z-50 hidden items-center justify-center" onclick="toggleSettingsModal(false)">
+        <div class="bg-gray-900 border border-gray-800 rounded-xl p-6 w-full max-w-md" onclick="event.stopPropagation()">
+            <h2 class="text-xl font-semibold mb-4">System Configuration... how tedious.</h2>
+            <p class="text-gray-400 mb-6">Manage your saved data here. Be careful, clearing data is irreversible. Not that I care.</p>
+            <button onclick="clearAllData()" class="w-full px-6 py-3 bg-red-800 hover:bg-red-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                <span>Clear All Saved Progress</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // --- STATE MANAGEMENT ---
+        let state = {
+            currentTab: 'phrases',
+            lastTheme: '',
+            phrases: [],
+            savedPhraseIds: [],
+            conversation: [],
+            convoIndex: 0,
+            progress: {
+                phrasesLearned: 0,
+                conversationsRead: 0,
+                lastPracticeScore: 'N/A'
+            }
+        };
+
+        const characterData = {
+            oreki: { name: "Oreki", color: "bg-gray-700", align: "justify-end", avatar: 'O' },
+            chitanda: { name: "Chitanda", color: "bg-pink-900/60", align: "justify-start", avatar: 'C' },
+            satoshi: { name: "Satoshi", color: "bg-blue-900/60", align: "justify-start", avatar: 'S' },
+            mayaka: { name: "Mayaka", color: "bg-orange-900/60", align: "justify-start", avatar: 'M' }
+        };
+
+        // --- CORE UI FUNCTIONS ---
+        function switchTab(event, tab) {
+            state.currentTab = tab;
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
+            document.getElementById(`${tab}Section`).classList.remove('hidden');
+
+            if (tab === 'saved') renderSavedPhrases();
+        }
+
+        function setLoading(btn, isLoading, originalText = 'Generate') {
+            const originalHTML = `<span>${originalText}</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>`;
+            if (isLoading) {
+                btn.disabled = true;
+                btn.innerHTML = `<span>Processing</span><svg class="animate-spin h-5 w-5 ml-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`;
+            } else {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const colors = { success: 'bg-green-600', warning: 'bg-yellow-600', error: 'bg-red-600', info: 'bg-blue-600' };
+            const toast = document.createElement('div');
+            toast.className = `px-6 py-3 ${colors[type]} text-white rounded-lg shadow-lg transform transition-all duration-300 translate-x-full opacity-0`;
+            toast.textContent = message;
+            document.getElementById('toastContainer').appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-x-full', 'opacity-0'); }, 100);
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function uuid() { // Simple unique ID for phrases
+            return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+        }
+
+        // --- RENDER FUNCTIONS ---
+        function getInitialContentHTML(type) {
+            const messages = {
+                phrases: { title: 'Energy-Efficient Phrases', subtitle: 'Minimal effort, maximum impact. Just how I prefer it.', icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>`, prompt: 'Enter a theme above to generate Oreki-style phrases...', subprompt: "I'd rather not waste energy without a purpose." },
+                saved: { title: 'Saved Phrases', subtitle: 'A collection of phrases you deemed worthy of saving. Curious.', icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path>`, prompt: 'You haven\'t saved any phrases.', subprompt: "Favorite phrases by clicking the bookmark icon." },
+                conversations: { title: 'Classic Club Conversations', subtitle: 'Observe how unnecessary social interactions unfold...', icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>`, prompt: 'Enter a theme to see character interactions...', subprompt: "Why must everything require so much effort?" },
+                practice: { title: 'Interactive Practice', subtitle: 'Test your ability to conserve energy while communicating effectively.', icon: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>`, prompt: 'Generate content first to get a practice scenario.', subprompt: "" }
+            };
+            const msg = messages[type];
+            return `
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="text-2xl font-semibold mb-2">${msg.title}</h3>
+                    <p class="text-gray-400 mb-6">${msg.subtitle}</p>
+                    <div id="${type}Content" class="space-y-4">
+                        <div class="text-center py-12 text-gray-500">
+                            <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-800 flex items-center justify-center"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">${msg.icon}</svg></div>
+                            <p>${msg.prompt}</p>
+                            <p class="text-sm mt-2">${msg.subprompt}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderAllPlaceholders() {
+            document.getElementById('phrasesSection').innerHTML = getInitialContentHTML('phrases');
+            document.getElementById('savedSection').innerHTML = getInitialContentHTML('saved');
+            document.getElementById('conversationsSection').innerHTML = getInitialContentHTML('conversations');
+            document.getElementById('practiceSection').innerHTML = `
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="text-2xl font-semibold mb-2">Interactive Practice</h3>
+                    <p class="text-gray-400 mb-6">Test your ability to conserve energy while communicating effectively.</p>
+                    <div id="practiceContent">
+                        <div id="practiceScenario" class="mb-6 p-4 bg-black border border-gray-700 rounded-lg">
+                            <p class="text-sm text-gray-400 mb-2">Scenario:</p>
+                            <p id="scenarioText">Generate content with a theme to get a dynamic practice scenario.</p>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block text-sm font-medium mb-2 text-gray-300">Your Response (Channel your inner Oreki):</label>
+                            <textarea id="practiceInput" class="w-full px-4 py-3 bg-black border border-gray-700 rounded-lg focus:outline-none focus:border-purple-500 text-white placeholder-gray-500 resize-none" rows="4" placeholder="Type your response here..."></textarea>
+                            <button onclick="analyzePractice()" id="analyzeBtn" class="mt-3 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed">Analyze Response</button>
+                        </div>
+                        <div id="practiceResult" class="hidden"></div>
+                    </div>
+                </div>`;
+        }
+
+        function renderPhrases(phrases, containerId = 'phrasesContent') {
+            const container = document.getElementById(containerId);
+            if (!phrases || phrases.length === 0) {
+                container.innerHTML = getInitialContentHTML('phrases').split('<div id="phrasesContent" class="space-y-4">')[1].slice(0, -6);
+                return;
+            }
+            const categoryColors = { "Dismissal": "bg-red-900/50 text-red-300", "Observation": "bg-blue-900/50 text-blue-300", "Reluctant Agreement": "bg-green-900/50 text-green-300", "Insight": "bg-purple-900/50 text-purple-300", "Sarcasm": "bg-yellow-900/50 text-yellow-300", "Default": "bg-gray-700/50 text-gray-300" };
+            container.innerHTML = phrases.map(p => `
+                <div class="p-4 bg-black border border-purple-900/50 rounded-lg hover:border-purple-700/70 transition-all duration-200 group">
+                    <div class="flex justify-between items-start mb-2">
+                        <p class="text-lg font-medium text-purple-300 pr-4">"${p.phrase}"</p>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold px-2 py-1 rounded-full ${categoryColors[p.category] || categoryColors['Default']}">${p.category}</span>
+                            <button onclick="toggleFavorite('${p.id}')" class="flex-shrink-0 text-gray-500 hover:text-yellow-400 transition-colors">
+                                <svg id="fav-icon-${p.id}" class="w-5 h-5" fill="${state.savedPhraseIds.includes(p.id) ? 'currentColor' : 'none'}" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-400 mb-1"><strong class="text-gray-500 font-medium">Context:</strong> ${p.context}</p>
+                    <p class="text-xs text-gray-500 italic"><strong class="text-gray-600 font-medium">Subtext:</strong> ${p.subtext}</p>
+                </div>
+            `).join('');
+        }
+
+        function renderSavedPhrases() {
+            document.getElementById('savedSection').innerHTML = getInitialContentHTML('saved');
+            const savedPhrases = state.phrases.filter(p => state.savedPhraseIds.includes(p.id));
+            if (savedPhrases.length > 0) {
+                renderPhrases(savedPhrases, 'savedContent');
+            }
+        }
+        
+        function renderConversation() {
+            const container = document.getElementById('conversationsSection');
+            container.innerHTML = `
+                <div class="bg-gray-900 border border-gray-800 rounded-xl p-6">
+                    <h3 class="text-2xl font-semibold mb-2">Classic Club Conversation</h3>
+                    <p class="text-gray-400 mb-6">Topic: ${state.lastTheme}</p>
+                    <div id="chatContainer" class="space-y-6 h-[60vh] overflow-y-auto p-4 bg-black rounded-lg border border-gray-800"></div>
+                    <div class="mt-4 text-center">
+                        <button id="convoBtn" onclick="revealNextMessage()" class="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors">Continue Convo</button>
+                    </div>
+                </div>`;
+            state.convoIndex = 0;
+            revealNextMessage();
+        }
+
+        function revealNextMessage() {
+            if (state.convoIndex >= state.conversation.length) return;
+            const msg = state.conversation[state.convoIndex];
+            const chatContainer = document.getElementById('chatContainer');
+            const charInfo = characterData[msg.character.toLowerCase()] || { name: msg.character, color: 'bg-gray-600', align: 'justify-start', avatar: '?'};
+            
+            const bubble = document.createElement('div');
+            bubble.className = `flex items-end gap-3 w-full opacity-0 transform translate-y-4 chat-bubble ${charInfo.align}`;
+            bubble.innerHTML = `
+                ${charInfo.align === 'justify-start' ? `<div class="w-8 h-8 rounded-full ${charInfo.color} flex items-center justify-center font-bold flex-shrink-0">${charInfo.avatar}</div>` : ''}
+                <div class="max-w-[75%]">
+                    <div class="px-4 py-2 rounded-lg ${charInfo.color}">
+                        <p class="text-sm">${msg.dialog}</p>
+                    </div>
+                </div>
+                ${charInfo.align === 'justify-end' ? `<div class="w-8 h-8 rounded-full ${charInfo.color} flex items-center justify-center font-bold flex-shrink-0">${charInfo.avatar}</div>` : ''}
+            `;
+            chatContainer.appendChild(bubble);
+
+            setTimeout(() => {
+                bubble.classList.remove('opacity-0', 'translate-y-4');
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+
+            state.convoIndex++;
+            if (state.convoIndex >= state.conversation.length) {
+                const btn = document.getElementById('convoBtn');
+                btn.textContent = "End of Conversation";
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                state.progress.conversationsRead++;
+                updateProgress();
+                saveState();
+            }
+        }
+        
+        function renderPracticeAnalysis(result) {
+            const resultDiv = document.getElementById('practiceResult');
+            resultDiv.classList.remove('hidden');
+            state.progress.lastPracticeScore = `${result.overall_score}/10`;
+            updateProgress();
+            saveState();
+
+            resultDiv.innerHTML = `
+            <div class="p-4 bg-black border border-green-900/50 rounded-lg mt-4">
+                <h4 class="text-lg font-medium mb-3 text-green-300">Analysis Complete</h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="p-3 bg-gray-900 rounded-lg border border-gray-700">
+                        <p class="text-sm text-gray-400">Overall Score</p>
+                        <p class="text-2xl font-bold text-green-400">${result.overall_score}/10</p>
+                    </div>
+                    <div class="p-3 bg-gray-900 rounded-lg border border-gray-700">
+                        <p class="text-sm text-gray-400">Energy Conservation</p>
+                        <p class="text-2xl font-bold text-purple-400">${result.energy_conservation_score}/10</p>
+                    </div>
+                </div>
+                <div class="prose prose-invert prose-sm max-w-none space-y-3">
+                    <div><strong>Feedback:</strong> ${marked.parse(result.feedback)}</div>
+                    <div><strong>Improved Version:</strong> <em class="text-gray-300">"${result.improved_version}"</em></div>
+                </div>
+            </div>`;
+        }
+        
+        // --- AI & GENERATION ---
+        async function streamAI(prompt, model, onChunk) {
+            const response = await puter.ai.chat([{ role: 'user', content: prompt }], { model, stream: true });
+            let fullContent = '';
+            for await (const chunk of response) {
+                if (chunk && chunk.text) {
+                    fullContent += chunk.text;
+                    onChunk(fullContent);
+                }
+            }
+            return fullContent;
+        }
+
+        async function generateContent() {
+            const theme = document.getElementById('themeInput').value.trim();
+            const model = document.getElementById('modelSelect').value;
+            const btn = document.getElementById('generateBtn');
+            if (!theme) {
+                showToast('A theme is required. Don\'t make me think more than necessary.', 'warning');
+                return;
+            }
+            state.lastTheme = theme;
+            setLoading(btn, true);
+
+            try {
+                // Reset content areas with loading spinners
+                ['phrases', 'conversations'].forEach(type => {
+                    document.getElementById(`${type}Section`).innerHTML = `<div class="bg-gray-900 border border-gray-800 rounded-xl p-6 text-center text-gray-400"><svg class="animate-spin h-6 w-6 mx-auto mb-2" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating ${type}...</div>`;
+                });
+                
+                await Promise.all([
+                    generatePhrases(theme, model),
+                    generateConversations(theme, model)
+                ]);
+
+                updatePracticeScenario(theme);
+                showToast('Content generated. I suppose it was unavoidable.', 'success');
+                saveState();
+
+            } catch (error) {
+                console.error('Generation error:', error);
+                showToast('Generation failed. How troublesome.', 'error');
+                renderAllPlaceholders();
+            } finally {
+                setLoading(btn, false);
+            }
+        }
+
+        async function generatePhrases(theme, model) {
+            const prompt = `You are a scriptwriter for the anime "Hyouka". Generate exactly 50 phrases that Houtarou Oreki would say regarding the theme: "${theme}".
+
+            Oreki's Personality Nuances:
+            - Default Mode: Energy-conserving, minimalist ("If I don't have to do it, I won't. If I have to do it, I'll make it quick.")
+            - When curious/intrigued (rarely admitted): Sharp, observant, analytical.
+            - When dealing with Chitanda's enthusiasm: Resigned, slightly exasperated, but ultimately helpful.
+            - When with friends: Can exhibit dry wit and sarcasm.
+            
+            For each phrase, provide:
+            1. [PHRASE]: The exact English phrase.
+            2. [CONTEXT]: A brief situation where he would say this.
+            3. [SUBTEXT]: The hidden meaning or true intention.
+            4. [CATEGORY]: One of the following: Dismissal, Observation, Reluctant Agreement, Insight, Sarcasm.
+
+            Format each entry separated by '---'. Example:
+            [PHRASE]: Another mystery? Can't we just have a normal club activity for once?
+            [CONTEXT]: When Chitanda brings up a new curiosity.
+            [SUBTEXT]: I'm complaining, but my brain is already starting to solve it.
+            [CATEGORY]: Reluctant Agreement
+            ---
+            ... (and so on for 50 phrases)`;
+            
+            const fullContent = await streamAI(prompt, model, (content) => {
+                const phrases = parsePhrases(content);
+                document.getElementById('phrasesSection').innerHTML = getInitialContentHTML('phrases');
+                renderPhrases(phrases);
+            });
+            state.phrases = parsePhrases(fullContent);
+            state.progress.phrasesLearned += state.phrases.length;
+            updateProgress();
+        }
+
+        function parsePhrases(content) {
+            const entries = content.split('---');
+            return entries.map(entry => {
+                const phraseMatch = entry.match(/\[PHRASE\]:\s*(.*)/);
+                const contextMatch = entry.match(/\[CONTEXT\]:\s*(.*)/);
+                const subtextMatch = entry.match(/\[SUBTEXT\]:\s*(.*)/);
+                const categoryMatch = entry.match(/\[CATEGORY\]:\s*(.*)/);
+                if (phraseMatch && contextMatch && subtextMatch && categoryMatch) {
+                    return {
+                        id: uuid(),
+                        phrase: phraseMatch[1].trim(),
+                        context: contextMatch[1].trim(),
+                        subtext: subtextMatch[1].trim(),
+                        category: categoryMatch[1].trim()
+                    };
+                }
+                return null;
+            }).filter(p => p);
+        }
+
+        async function generateConversations(theme, model) {
+            const prompt = `You are a scenario writer for the anime "Hyouka". Create a single, long conversation (around 20 exchanges) between the Classics Club members (Oreki, Chitanda, Satoshi, Mayaka) about the theme: "${theme}".
+
+            The conversation must have a clear narrative arc:
+            1.  **Inciting Incident:** Chitanda introduces a problem or curiosity related to the theme.
+            2.  **Rising Action:** Satoshi provides data, Mayaka offers a critical opinion, and they discuss possibilities. Oreki remains reluctant.
+            3.  **Climax/Turning Point:** Oreki, despite his apathy, makes a key observation or deduction that no one else noticed. This is the "aha!" moment.
+            4.  **Resolution:** The group acts on Oreki's insight, and Oreki expresses resignation about the effort he now has to expend.
+            
+            Output the entire conversation as a single, valid JSON array. Each object in the array represents one line of dialogue.
+            
+            JSON format:
+            [
+              { "character": "Chitanda", "dialog": "Oreki-san! I'm so curious about..." },
+              { "character": "Oreki", "dialog": "Why me...?" },
+              ...
+            ]
+            
+            Ensure characters are true to their personalities. Do NOT include anything outside the JSON array.`;
+            
+            try {
+                const fullContent = await streamAI(prompt, model, () => {});
+                // Clean up potential markdown code blocks
+                const cleanedContent = fullContent.replace(/^```json\n|```$/g, '').trim();
+                state.conversation = JSON.parse(cleanedContent);
+                renderConversation();
+            } catch (e) {
+                console.error("Failed to parse conversation JSON:", e, "Content:", fullContent);
+                document.getElementById('conversationsSection').innerHTML = `<div class="bg-gray-900 border border-red-800 rounded-xl p-6 text-center text-red-400">Failed to create conversation. The AI's response was malformed. How bothersome.</div>`;
+            }
+        }
+        
+        async function analyzePractice() {
+            const response = document.getElementById('practiceInput').value.trim();
+            const scenario = document.getElementById('scenarioText').textContent;
+            const model = document.getElementById('modelSelect').value;
+            const btn = document.getElementById('analyzeBtn');
+            if (!response) { showToast('...You need to write something first.', 'warning'); return; }
+
+            setLoading(btn, true, 'Analyze Response');
+            document.getElementById('practiceResult').classList.remove('hidden');
+            document.getElementById('practiceResult').innerHTML = `<div class="text-center text-gray-400"><svg class="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24">...</svg>Analyzing...</div>`;
+            
+            const prompt = `Analyze the user's response to a scenario, pretending you are a writing coach specializing in the character of Houtarou Oreki.
+            
+            Scenario: "${scenario}"
+            User's Response: "${response}"
+            
+            Provide your analysis as a single, valid JSON object with the following keys:
+            - "overall_score": An integer from 1 to 10 on how well it captures Oreki.
+            - "energy_conservation_score": An integer from 1 to 10 for minimalism and reluctance.
+            - "feedback": A concise markdown-formatted string explaining the scores. Address tone, word choice, and underlying intent.
+            - "improved_version": A better, more authentic Oreki-style response.
+            
+            Do not include any text outside the JSON object.`;
+            
+            try {
+                const fullContent = await streamAI(prompt, model, () => {});
+                const cleanedContent = fullContent.replace(/^```json\n|```$/g, '').trim();
+                const result = JSON.parse(cleanedContent);
+                renderPracticeAnalysis(result);
+            } catch (e) {
+                console.error("Failed to parse analysis JSON:", e, "Content:", fullContent);
+                showToast('Analysis failed. The response was not structured correctly.', 'error');
+                document.getElementById('practiceResult').innerHTML = '<div class="p-4 bg-black border border-red-900/50 rounded-lg text-red-400">Failed to analyze. Try again.</div>';
+            } finally {
+                setLoading(btn, false, 'Analyze Response');
+            }
+        }
+
+        // --- USER ACTIONS & HELPERS ---
+        function toggleFavorite(phraseId) {
+            const icon = document.getElementById(`fav-icon-${phraseId}`);
+            const index = state.savedPhraseIds.indexOf(phraseId);
+            if (index > -1) {
+                state.savedPhraseIds.splice(index, 1);
+                icon.setAttribute('fill', 'none');
+            } else {
+                state.savedPhraseIds.push(phraseId);
+                icon.setAttribute('fill', 'currentColor');
+                showToast('Phrase saved. I guess it was mildly interesting.', 'info');
+            }
+            updateProgress();
+            saveState();
+        }
+        
+        function updatePracticeScenario(theme) {
+            const scenario = `Chitanda's eyes sparkle with intense curiosity. "Oreki-san! I've just heard something fascinating about ${theme}! We absolutely must investigate. I can't stop thinking about it... I'm curious!"`;
+            document.getElementById('scenarioText').textContent = scenario;
+            document.getElementById('practiceInput').value = '';
+            document.getElementById('practiceResult').classList.add('hidden');
+        }
+
+        function updateProgress() {
+            document.getElementById('phrasesLearned').textContent = state.progress.phrasesLearned;
+            document.getElementById('phrasesSaved').textContent = state.savedPhraseIds.length;
+            document.getElementById('conversationsRead').textContent = state.progress.conversationsRead;
+            document.getElementById('practiceScore').textContent = state.progress.lastPracticeScore;
+
+            const totalActivities = (state.progress.phrasesLearned / 10) + (state.progress.conversationsRead * 5);
+            const energyLeft = Math.max(100 - totalActivities, 5).toFixed(0);
+            document.getElementById('energyBar').style.width = `${energyLeft}%`;
+            document.getElementById('energyPercent').textContent = `${energyLeft}%`;
+        }
+
+        function toggleSettingsModal(show) {
+            const modal = document.getElementById('settingsModal');
+            if (show) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function clearAllData() {
+            if (confirm("Are you sure you want to erase all progress? This is a lot of effort to undo.")) {
+                localStorage.removeItem('orekiLangMasteryState');
+                location.reload();
+                showToast('Data cleared. A fresh start. How exhausting.', 'warning');
+            }
+        }
+
+        // --- PERSISTENCE ---
+        function saveState() {
+            localStorage.setItem('orekiLangMasteryState', JSON.stringify(state));
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('orekiLangMasteryState');
+            if (savedState) {
+                state = JSON.parse(savedState);
+                showToast('Welcome back. Your session has been restored.', 'info');
+            } else {
+                showToast("Welcome. Let's get this over with...", 'info');
+            }
+        }
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            loadState();
+            renderAllPlaceholders();
+
+            // Apply loaded state to UI
+            document.getElementById('themeInput').value = state.lastTheme || '';
+            if (state.phrases.length > 0) {
+                document.getElementById('phrasesSection').innerHTML = getInitialContentHTML('phrases');
+                renderPhrases(state.phrases);
+            }
+            if (state.conversation.length > 0) {
+                renderConversation();
+            }
+            if (state.lastTheme) {
+                updatePracticeScenario(state.lastTheme);
+            }
+
+            // Set active tab styles
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.tab-btn[onclick*="'${state.currentTab}'"]`).classList.add('active');
+            document.querySelectorAll('.content-section').forEach(section => section.classList.add('hidden'));
+            document.getElementById(`${state.currentTab}Section`).classList.remove('hidden');
+
+            updateProgress();
+            
+            // Add CSS for tab styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .tab-btn { padding: 0.75rem 1.5rem; background-color: transparent; color: #9ca3af; border: 2px solid #374151; border-radius: 0.5rem; font-weight: 500; transition: all 0.2s; white-space: nowrap; }
+                .tab-btn:hover { border-color: #4b5563; color: #d1d5db; }
+                .tab-btn.active { background-color: #9333ea; color: white; border-color: #9333ea; }
+            `;
+            document.head.appendChild(style);
+        });
+
+    </script>
+</body>
+</html>
