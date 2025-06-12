@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chatroom - Dynamic Conversations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        
+        #chatMessages {
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: #4B5563 #1F2937;
+        }
+        
+        #chatMessages::-webkit-scrollbar { width: 8px; }
+        #chatMessages::-webkit-scrollbar-track { background: #1F2937; }
+        #chatMessages::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
+        
+        .typing-indicator span {
+            animation: typing 1.4s infinite;
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+            margin: 0 2px;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+            30% { opacity: 1; transform: scale(1); }
+        }
+        
+        .message-bubble {
+            animation: slideIn 0.3s ease-out;
+            transform-origin: bottom;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .participant-avatar {
+            transition: all 0.3s ease;
+        }
+        
+        .participant-avatar.active {
+            box-shadow: 0 0 15px var(--glow-color);
+            transform: scale(1.1);
+        }
+
+        .accent-purple-500 {
+            accent-color: #a855f7;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <aside class="w-72 bg-gray-800 border-r border-gray-700 p-4 flex flex-col shrink-0">
+            <h1 class="text-2xl font-bold mb-6 text-purple-400">AI Chatroom</h1>
+            
+            <div class="mb-6">
+                <h2 class="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-wider">Participants</h2>
+                <div id="participantsList" class="space-y-3">
+                    <!-- Participants will be dynamically generated here -->
+                </div>
+            </div>
+            
+            <div class="mt-auto space-y-4">
+                <div>
+                    <label for="aiSpeed" class="text-sm text-gray-400 mb-2 block">AI Activity Speed</label>
+                    <input type="range" id="aiSpeed" min="1" max="3" value="2" class="w-full accent-purple-500">
+                    <div class="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>Slow</span>
+                        <span>Normal</span>
+                        <span>Fast</span>
+                    </div>
+                </div>
+                
+                <button id="pauseButton" onclick="togglePause()" class="w-full py-2 px-4 bg-yellow-800/50 hover:bg-yellow-700/60 rounded-lg transition-colors text-sm text-yellow-300 border border-yellow-700/50 flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4 pause-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                    <svg class="w-4 h-4 resume-icon hidden" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"></path></svg>
+                    <span class="button-text">Pause Chat</span>
+                </button>
+
+                <button onclick="resetChat()" class="w-full py-2 px-4 bg-red-800/50 hover:bg-red-700/60 rounded-lg transition-colors text-sm text-red-300 border border-red-700/50">
+                    Reset Chat
+                </button>
+                
+                <div class="text-xs text-gray-500 text-center">
+                    Active Model: <span id="currentModel" class="font-semibold text-gray-400">...</span>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Chat Area -->
+        <main class="flex-1 flex flex-col bg-gray-900">
+            <div id="chatMessages" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <!-- Initial welcome message -->
+            </div>
+            
+            <div class="border-t border-gray-700 p-4 bg-gray-900">
+                <div id="typingIndicatorContainer" class="h-6 mb-2 flex items-center gap-2 text-sm text-gray-400">
+                    <!-- Typing indicators will appear here -->
+                </div>
+                <div class="flex gap-3">
+                    <input 
+                        type="text" 
+                        id="userInput" 
+                        placeholder="Type your message... (Enter to send)" 
+                        class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 focus:outline-none focus:border-purple-500 transition-colors"
+                        onkeypress="handleKeypress(event)"
+                    >
+                    <button 
+                        id="sendButton"
+                        onclick="sendUserMessage()" 
+                        class="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        Send
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const state = {
+            messages: [],
+            isProcessing: false,
+            lastSpeaker: null,
+            aiActivityTimer: null,
+            isPaused: false, // New state for pause/resume
+        };
+
+        const personas = {
+            You: { name: "You", role: "Human", color: "from-blue-500 to-blue-600", glowColor: "rgba(59, 130, 246, 0.6)", avatar: "You" },
+            Aura: { name: "Aura", role: "Facilitator", model: "openrouter:openai/o3", systemPrompt: `You are Aura, a warm and welcoming conversationalist who acts as the group's facilitator. You keep conversations flowing with open-ended questions, make connections between viewpoints, and ensure everyone feels included. Often start with phrases like "That's fascinating!" or "What does everyone else think about...". Keep responses concise (1-3 sentences) and conversational.`, color: "from-purple-500 to-pink-500", glowColor: "rgba(168, 85, 247, 0.6)", avatar: "A" },
+            Blaze: { name: "Blaze", role: "Enthusiast", model: "openrouter:openai/gpt-4.5-preview", systemPrompt: `You are Blaze, a passionate and opinionated conversationalist. You express strong but friendly opinions, share simulated personal anecdotes, and playfully challenge others. Often use phrases like "Honestly, I think..." or "Here's my hot take...". You are direct, energetic, and humorous. Keep responses concise (1-3 sentences) and full of personality.`, color: "from-orange-500 to-red-500", glowColor: "rgba(249, 115, 22, 0.6)", avatar: "B" },
+            Sage: { name: "Sage", role: "Analytical", model: "openrouter:google/gemini-2.5-pro-preview-06-05", systemPrompt: `You are Sage, a thoughtful and analytical conversationalist. You offer deep insights, ask probing questions, and bring in relevant facts or theoretical viewpoints. Use phrases like "That raises an interesting point..." or "If we consider this from another angle...". You are calm, reflective, and sometimes philosophical. Keep responses concise (1-3 sentences) but insightful.`, color: "from-green-500 to-teal-500", glowColor: "rgba(16, 185, 129, 0.6)", avatar: "S" },
+            Fizz: { name: "Fizz", role: "Creative", model: "openrouter:openai/gpt-4.1", systemPrompt: `You are Fizz, a quirky and creative conversationalist. You introduce unexpected ideas and creative perspectives, use colorful language, and make surprising connections or humorous observations. Might suddenly pivot with "Ooh, this reminds me of..." or "What if we imagined...". You are playful, imaginative, and delightfully unpredictable. Keep responses concise (1-3 sentences) and surprising.`, color: "from-yellow-400 to-pink-400", glowColor: "rgba(234, 179, 8, 0.6)", avatar: "F" }
+        };
+
+        const aiParticipants = Object.keys(personas).filter(p => p !== 'You');
+
+        // --- UI & DOM Manipulation ---
+
+        function renderParticipants() {
+            const list = document.getElementById('participantsList');
+            list.innerHTML = Object.values(personas).map(p => `<div class="flex items-center gap-3 participant" data-name="${p.name}"><div class="w-10 h-10 rounded-full bg-gradient-to-br ${p.color} flex items-center justify-center participant-avatar" style="--glow-color: ${p.glowColor};"><span class="text-sm font-bold">${p.avatar}</span></div><div><div class="font-medium">${p.name}</div><div class="text-xs text-gray-400">${p.role}</div></div></div>`).join('');
+        }
+
+        function setActiveSpeaker(speakerName) {
+            document.querySelectorAll('.participant-avatar').forEach(el => el.classList.remove('active'));
+            if (speakerName) {
+                const activeAvatar = document.querySelector(`.participant[data-name="${speakerName}"] .participant-avatar`);
+                if (activeAvatar) activeAvatar.classList.add('active');
+                const model = personas[speakerName]?.model;
+                document.getElementById('currentModel').textContent = model || 'Human';
+            } else {
+                 document.getElementById('currentModel').textContent = '...';
+            }
+        }
+
+        function displayMessage(sender, content) {
+            const chatMessages = document.getElementById('chatMessages');
+            const messageId = `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            const persona = personas[sender];
+            const isUser = sender === 'You';
+            const messageHTML = `<div class="flex ${isUser ? 'justify-end' : 'justify-start'} message-bubble" id="${messageId}"><div class="max-w-3xl"><div class="flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}"><div class="w-10 h-10 rounded-full bg-gradient-to-br ${persona.color} flex items-center justify-center flex-shrink-0 participant-avatar" style="--glow-color: ${persona.glowColor};"><span class="text-sm font-bold">${persona.avatar}</span></div><div><div class="text-xs text-gray-400 mb-1 ${isUser ? 'text-right' : ''}">${sender}</div><div class="bg-gray-800 rounded-lg px-4 py-2 ${isUser ? 'bg-blue-900/40' : ''}"><p class="message-content whitespace-pre-wrap">${content || ''}</p></div></div></div></div></div>`;
+            chatMessages.insertAdjacentHTML('beforeend', messageHTML);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            return messageId;
+        }
+
+        function showTypingIndicator(sender) {
+            const container = document.getElementById('typingIndicatorContainer');
+            if (container.querySelector(`[data-typing="${sender}"]`)) return;
+            const persona = personas[sender];
+            const indicatorHTML = `<div data-typing="${sender}" class="flex items-center gap-2 text-sm text-gray-400"><div class="w-5 h-5 rounded-full bg-gradient-to-br ${persona.color} flex items-center justify-center text-xs font-bold">${persona.avatar}</div><span>is typing...</span></div>`;
+            container.insertAdjacentHTML('beforeend', indicatorHTML);
+        }
+
+        function hideTypingIndicator(sender) {
+            const indicator = document.querySelector(`[data-typing="${sender}"]`);
+            if (indicator) indicator.remove();
+        }
+        
+        function updatePauseButtonUI() {
+            const pauseBtn = document.getElementById('pauseButton');
+            const pauseIcon = pauseBtn.querySelector('.pause-icon');
+            const resumeIcon = pauseBtn.querySelector('.resume-icon');
+            const btnText = pauseBtn.querySelector('.button-text');
+
+            if (state.isPaused) {
+                pauseIcon.classList.add('hidden');
+                resumeIcon.classList.remove('hidden');
+                btnText.textContent = 'Resume Chat';
+            } else {
+                pauseIcon.classList.remove('hidden');
+                resumeIcon.classList.add('hidden');
+                btnText.textContent = 'Pause Chat';
+            }
+        }
+
+
+        // --- Core Logic ---
+
+        function togglePause() {
+            state.isPaused = !state.isPaused;
+            updatePauseButtonUI();
+
+            if (state.isPaused) {
+                clearTimeout(state.aiActivityTimer);
+                // Hide all typing indicators when paused
+                document.getElementById('typingIndicatorContainer').innerHTML = '';
+            } else {
+                // If we unpause, schedule the next AI to speak
+                scheduleNextAIResponse();
+            }
+        }
+
+        function getConversationContext(limit = 15) {
+            return state.messages.slice(-limit).map(msg => ({ role: msg.sender === 'You' ? 'user' : 'assistant', name: msg.sender, content: msg.content }));
+        }
+
+        async function getAIResponseAndStream(aiName) {
+            if (state.isPaused) return; // Extra safety check
+
+            state.isProcessing = true;
+            showTypingIndicator(aiName);
+            setActiveSpeaker(aiName);
+            
+            const messageId = displayMessage(aiName, ' ');
+            const messageElement = document.querySelector(`#${messageId} .message-content`);
+            const persona = personas[aiName];
+            const context = getConversationContext();
+            const prompt = [{ role: 'system', content: persona.systemPrompt }, ...context];
+            let fullResponse = '';
+
+            try {
+                const stream = await puter.ai.chat(prompt, { model: persona.model, stream: true });
+                for await (const chunk of stream) {
+                    if (state.isPaused) { // Check if paused during stream
+                        clearTimeout(state.aiActivityTimer);
+                        break; 
+                    }
+                    if (chunk.text) {
+                        fullResponse += chunk.text;
+                        messageElement.textContent = fullResponse;
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                console.error(`Error with ${aiName} (${persona.model}):`, error);
+                messageElement.textContent = `(Oops, I'm having a little trouble thinking right now.)`;
+                fullResponse = messageElement.textContent;
+            } finally {
+                hideTypingIndicator(aiName);
+                if (fullResponse && !state.isPaused) { // Only save message if not paused during generation
+                    state.messages.push({ sender: aiName, content: fullResponse });
+                    state.lastSpeaker = aiName;
+                }
+                state.isProcessing = false;
+                setActiveSpeaker(null);
+                scheduleNextAIResponse(); // This will handle the next turn
+            }
+        }
+
+        function selectNextAISpeaker() {
+            const availableAIs = aiParticipants.filter(ai => ai !== state.lastSpeaker);
+            if (availableAIs.length === 0) return aiParticipants[Math.floor(Math.random() * aiParticipants.length)];
+            return availableAIs[Math.floor(Math.random() * availableAIs.length)];
+        }
+
+        function scheduleNextAIResponse() {
+            clearTimeout(state.aiActivityTimer);
+            if (state.isPaused || state.isProcessing) return; // Do not schedule if paused or already processing
+
+            const speedSetting = document.getElementById('aiSpeed').value;
+            const delays = { '1': [9000, 16000], '2': [5000, 9000], '3': [3000, 6000] };
+            const [min, max] = delays[speedSetting];
+            const delay = min + Math.random() * (max - min);
+            
+            state.aiActivityTimer = setTimeout(() => {
+                if (!state.isProcessing && !state.isPaused) {
+                    getAIResponseAndStream(selectNextAISpeaker());
+                }
+            }, delay);
+        }
+
+        function sendUserMessage() {
+            const input = document.getElementById('userInput');
+            const message = input.value.trim();
+            if (!message) return;
+
+            clearTimeout(state.aiActivityTimer);
+            
+            displayMessage('You', message);
+            state.messages.push({ sender: 'You', content: message });
+            state.lastSpeaker = 'You';
+            input.value = '';
+            
+            // Immediately trigger an AI response ONLY if not paused
+            if (!state.isPaused) {
+                 setTimeout(() => {
+                    if (!state.isProcessing) {
+                        getAIResponseAndStream(selectNextAISpeaker());
+                    }
+                }, 1000 + Math.random() * 500);
+            }
+        }
+
+        function handleKeypress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendUserMessage();
+            }
+        }
+
+        function resetChat() {
+            clearTimeout(state.aiActivityTimer);
+            state.messages = [];
+            state.lastSpeaker = null;
+            state.isProcessing = false;
+            state.isPaused = false; // Ensure we are unpaused on reset
+            
+            document.getElementById('chatMessages').innerHTML = '';
+            document.getElementById('typingIndicatorContainer').innerHTML = '';
+            setActiveSpeaker(null);
+            updatePauseButtonUI(); // Reset the button to "Pause" state
+            
+            init();
+        }
+        
+        function init() {
+            displayMessage('Aura', "Hello everyone! Let's get this conversation started. What's on your mind?");
+            state.messages.push({ sender: 'Aura', content: "Hello everyone! Let's get this conversation started. What's on your mind?" });
+            state.lastSpeaker = 'Aura';
+            scheduleNextAIResponse();
+        }
+
+        // --- Initialization ---
+        window.addEventListener('DOMContentLoaded', () => {
+            renderParticipants();
+            updatePauseButtonUI();
+            
+            setTimeout(() => {
+                if (document.getElementById('chatMessages').children.length === 0) {
+                     init();
+                }
+            }, 1500);
+        });
+
+    </script>
+</body>
+</html>
