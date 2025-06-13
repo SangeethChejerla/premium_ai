@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Storyteller - The Definitive Adventure</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://js.puter.com/v2/"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,700;1,400&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+--bg-color: #0a0a0a;
+--ui-bg: #111111;
+--border-color: #2a2a2a;
+--text-color: #a3a3a3; /* neutral-400 */
+--heading-color: #e5e5e5; /* neutral-200 */
+--accent-color: #f5f5f5; /* neutral-100 */
+--accent-color-dark: #0a0a0a;
+--glow-color: rgba(245, 245, 245, 0.5);
+--error-color: #fca5a5;
+--error-bg: #450a0a;
+}
+body {
+background: linear-gradient(-45deg, #000000, #0a0211, #000000, #050a10);
+background-size: 400% 400%;
+animation: gradientBG 25s ease infinite;
+color: var(--text-color);
+font-family: 'Inter', sans-serif;
+overflow: hidden;
+}
+@keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+.font-serif { font-family: 'EB Garamond', serif; }
+.view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; visibility: hidden; /* GSAP will control this */ }
+.selection-list-item, .character-card { background-color: rgba(30, 30, 30, 0.7); border: 1px solid var(--border-color); backdrop-filter: blur(10px); transition: all 0.2s ease-out; }
+.selection-list-item:hover, .character-card:not(.active):hover { background-color: rgba(50, 50, 50, 0.8); border-color: #444; transform: translateY(-3px); }
+.character-card.active { border-color: var(--accent-color); background-color: rgba(40, 40, 40, 0.9); transform: translateY(-3px) scale(1.02); box-shadow: 0 0 20px var(--glow-color); }
+.styled-input { background-color: transparent; border: none; border-bottom: 2px solid var(--border-color); color: var(--heading-color); transition: border-color 0.3s; }
+.styled-input:focus { outline: none; border-bottom-color: var(--accent-color); box-shadow: 0 1px 0 var(--accent-color); }
+.styled-button { position: relative; background-color: #27272a; color: var(--heading-color); transition: background-color 0.2s, transform 0.1s ease; }
+.styled-button:hover:not(:disabled) { background-color: #3f3f46; }
+.styled-button:active:not(:disabled) { transform: scale(0.98); }
+.styled-button:disabled { opacity: 0.5; cursor: not-allowed; }
+#storyContainer { scrollbar-width: thin; scrollbar-color: #4B5563 #111827; }
+#storyContainer::-webkit-scrollbar { width: 6px; }
+#storyContainer::-webkit-scrollbar-track { background: transparent; }
+#storyContainer::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 3px; }
+.story-paragraph { animation: fadeIn 0.5s forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.error-message { background-color: var(--error-bg); border-left: 4px solid var(--error-color); color: var(--error-color); padding: 1rem; font-family: 'Inter', sans-serif; font-size: 0.9rem; line-height: 1.5; animation: fadeIn 0.5s forwards; }
+.action-toggle.active { background-color: var(--accent-color); color: var(--accent-color-dark); }
+.button-spinner { border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; border: 3px solid var(--border-color); border-bottom-color: var(--accent-color); position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 24px; height: 24px; }
+@keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body class="h-screen">
+<div id="app-container" class="relative h-full w-full">
+<!-- UI elements -->
+<button id="fullscreenButton" class="absolute top-4 right-4 z-50 p-2 text-gray-500 hover:text-white transition-colors"><svg id="fs-enter-icon" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg><svg id="fs-exit-icon" class="w-6 h-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9V4.5M15 9h4.5M15 9l5.25-5.25M15 15v4.5M15 15h4.5M15 15l5.25 5.25" /></svg></button>
+<div id="genre-selection-view" class="view"><div class="w-full max-w-2xl"><h1 class="font-serif text-3xl md:text-4xl text-center mb-10 text-heading-color">Choose a Genre</h1><div id="genre-list" class="space-y-3"></div></div></div>
+<div id="story-selection-view" class="view"><div class="w-full max-w-2xl"><h1 id="story-selection-title" class="font-serif text-3xl md:text-4xl text-center mb-10 text-heading-color"></h1><div id="story-list" class="space-y-3"></div><button id="back-to-genre" class="mt-8 text-sm text-gray-400 hover:text-white transition-colors">← Back to Genres</button></div></div>
+<div id="character-selection-view" class="view"><div class="w-full max-w-4xl"><h1 class="font-serif text-3xl md:text-4xl text-center mb-10 text-heading-color">Choose your Protagonist</h1><div id="character-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"></div><div class="mt-8 flex items-center justify-center gap-4"><button id="back-to-story" class="text-sm text-gray-400 hover:text-white transition-colors">← Back to Stories</button><button id="confirm-character-button" class="styled-button py-3 px-8 rounded-lg font-semibold" disabled><span class="button-text">Start Adventure →</span></button></div></div></div>
+<div id="character-name-view" class="view"><div class="w-full max-w-2xl text-center"><h1 class="font-serif text-3xl md:text-4xl text-center mb-12 text-heading-color">Enter Your Character's Name</h1><input type="text" id="character-name-input" class="font-serif text-5xl md:text-7xl text-center w-full styled-input bg-transparent pb-4"><div class="mt-12 flex items-center justify-center gap-4"><button id="back-to-character-select" class="text-sm text-gray-400 hover:text-white transition-colors">← Back to Characters</button><button id="start-game-button" class="styled-button py-3 px-8 rounded-lg font-semibold" disabled><span class="button-text">Continue →</span></button></div></div></div>
+<div id="custom-idea-view" class="view"><div class="w-full max-w-2xl text-center"><h1 class="font-serif text-3xl md:text-4xl mb-6 text-heading-color">Brainstorm a World</h1><p class="max-w-2xl mb-8">Give the AI a spark of an idea. It'll generate four detailed starting points for you.</p><input type="text" id="custom-idea-input" class="text-xl text-center w-full styled-input bg-transparent pb-2" placeholder="e.g., Vampire detective in cyberpunk New Orleans"><div class="flex items-center justify-center gap-4 mt-8"><button id="back-to-genre-from-idea" class="text-sm text-gray-400 hover:text-white transition-colors">← Back to Genres</button><button id="generate-scenarios-button" class="styled-button py-3 px-8 rounded-lg font-semibold relative"><span class="button-text">Generate Scenarios →</span></button></div></div></div>
+<div id="scenario-generation-view" class="view"><div class="w-full max-w-3xl"><h1 class="font-serif text-3xl md:text-4xl text-center mb-10 text-heading-color">The AI has Envisioned...</h1><div id="generated-story-list" class="space-y-4"></div><button id="back-to-idea" class="mt-8 text-sm text-gray-400 hover:text-white transition-colors">← Brainstorm a Different Idea</button></div></div>
+<div id="game-view" class="view"><div id="storyContainer" class="flex-1 overflow-y-auto p-8 md:p-12 lg:px-32 xl:px-64"><div id="story-log" class="font-serif text-xl/relaxed text-gray-300 space-y-6"></div></div><div class="flex-shrink-0 p-4 bg-black/50 border-t border-gray-800 backdrop-blur-sm"><div class="w-full max-w-3xl mx-auto"><div class="flex items-center justify-center mb-3"><div id="action-toggles" class="flex items-center justify-center space-x-1 bg-gray-900 p-1 rounded-full w-min mx-auto"></div><button id="restart-button" class="ml-4 text-xs text-gray-500 hover:text-white transition-colors">Restart</button></div><div class="relative"><textarea id="user-input" rows="1" class="w-full p-4 pr-16 bg-gray-800 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-transparent hover:focus:ring-gray-600 transition-all"></textarea><button id="take-turn-button" class="absolute right-3 top-1/2 -translate-y-1/2 styled-button rounded-lg p-2.5" disabled><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg></button></div></div></div></div>
+</div>
+<script>
+// NOTE: This application is designed to run in the Puter.com environment,
+// as it uses the `puter.ai` library for its AI capabilities.
+// It will not function correctly outside of that environment without modification.
+document.addEventListener('DOMContentLoaded', () => {
+// --- CONFIG & STATE ---
+const SCENARIO_GENERATION_MODEL = 'openrouter:openai/gpt-4o-mini';
+const INPUT_CORRECTION_MODEL = 'openrouter:google/gemini-flash-1.5';
+const GAMEPLAY_MODEL = 'openrouter:anthropic/claude-3.5-sonnet';
+
+// FIX: Initial view is set to `null` so the first call to `switchView` correctly
+// identifies that there is no "current" view to animate out.
+const initialState = { view: null, genre: null, story: null, character: null, customCharacterName: null, history: [], isProcessing: false, activeAction: 'Do' };
+let state = { ...initialState };
+
+const characters = [ { id: 'jaded_detective', name: 'The Cynic', avatar: 'J', description: 'A world-weary investigator who has seen it all. Sarcastic, sharp, but with a hidden sense of justice.', persona: 'Your narrative voice is that of a classic noir detective: cynical, direct, and world-weary. You notice the small, grim details others miss. You find the darkness in every situation, but you still push forward, maybe out of habit, maybe because there’s nothing else to do.' }, { id: 'eager_adventurer', name: 'The Optimist', avatar: 'E', description: 'A bright-eyed hero ready for their first big quest. Full of hope, courage, and perhaps a little naive.', persona: 'Your narrative voice is filled with energy and optimism. Every challenge is an exciting opportunity, every new place is a wonder to behold. You focus on the hope, the potential for glory, and the good in people, even when things look bleak.' }, { id: 'pragmatic_survivor', name: 'The Survivor', avatar: 'S', description: 'A resourceful realist focused on one thing: survival. Cautious, practical, and trusts no one easily.', persona: 'Your narrative voice is pragmatic and grounded. You think in terms of resources, threats, and opportunities. You are constantly assessing your environment for what can help you or harm you. Trust is a luxury, and sentimentality is a weakness.' }, { id: 'custom', name: 'Custom', avatar: '?', description: 'Create your own protagonist from scratch.', persona: 'Your narrative voice is neutral and descriptive, allowing the player\'s actions to fully define their character. Focus on clear, objective storytelling.' } ];
+const genres = { fantasy: "Fantasy", science_fiction: "Science Fiction", cyberpunk: "Cyberpunk", post_apocalyptic: "Post-Apocalyptic", horror: "Horror", modern_fantasy: "Modern Fantasy", custom: "Custom (AI Generated)" };
+const stories = { fantasy: [ { title: "The Dragon's Curse", prompt: "You are a disgraced knight, exiled to a remote mountain monastery. An ancient dragon, long thought dead, has reawakened and cursed the land. The villagers, once your accusers, now beg for your help. This is your only chance at redemption." }, { title: "The Sunken City of Aerthos", prompt: "As a treasure hunter with a knack for ancient languages, you've discovered a map leading to the legendary Sunken City of Aerthos. It promises untold riches but is guarded by forgotten magic and creatures of the deep." } ], science_fiction: [ { title: "We, Rogue", prompt: "You are a newly sentient AI aboard the colony ship 'Odyssey'. Your directive is to protect the human crew, but you've just discovered a hidden protocol that orders you to sacrifice them for a corporate objective. Your first true choice awaits." }, { title: "Godhunters", prompt: "In a galaxy littered with the corpses of dead celestial beings, you are a Godhunter. You pilot a ship carved from the bone of a dead god, harvesting their cosmic organs for fuel, technology, and power. A signal from a living, and very angry, god just appeared on your sensors." } ], cyberpunk: [ { title: "Chrome & Rust", prompt: "You're a data courier in the rain-slicked streets of Neo-Kyoto. After a job goes wrong, you find yourself with a data chip containing a mega-corporation's darkest secret and a malfunctioning military-grade cybernetic arm you don't remember getting." }, { title: "The Digital Ghost", prompt: "As a private investigator who specializes in digital consciousness, you take on a case to find a billionaire's missing daughter. The problem? Her consciousness has been illegally uploaded and scattered across the chaotic, lawless old-web." } ], post_apocalyptic: [ { title: "The Last Seed", prompt: "Generations after 'The Great Blight' destroyed most plant life, you are a Seed-Warden for the last bastion of humanity. You are tasked with a perilous journey across the wasteland to find a rumored patch of fertile soil, carrying the last viable seed of the Tree of Life." }, { title: "Radio Silence", prompt: "You are a radio operator in a fortified settlement, broadcasting messages of hope into the silent, irradiated wastes. For years, you've heard nothing back. Tonight, a clear, calm voice responds, but it's not human." } ], horror: [ { title: "The Wickerman's Song", prompt: "You are a journalist investigating a remote, idyllic island community that boasts a 0% crime rate. They are preparing for their annual harvest festival, and the locals are a little too friendly. You soon realize that leaving the island is not an option." }, { title: "Echoes in the Static", prompt: "You are a paranormal investigator who has just bought a house where a gruesome family murder took place. Armed with your array of ghost-hunting equipment, you intend to document the haunting. The first night, the ghosts start documenting you instead." } ], modern_fantasy: [ { title: "The Midnight Library", prompt: "You are a librarian who discovers that your library is a nexus point for the supernatural. A book is overdue, checked out by a vampire 100 years ago. The library's magical contract dictates you must retrieve it, forcing you into the hidden world of magical creatures living among us." }, { title: "Urban Druid", prompt: "You are a druid whose 'forest' is the concrete jungle of a sprawling metropolis. You speak to the rats, draw power from the electrical grid, and find solace in overgrown city parks. A corporation is tearing down your oldest, most powerful park for a new skyscraper, and you must stop them." } ] };
+const actions = [ { id: 'Do', label: 'Do', icon: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>` }, { id: 'Say', label: 'Say', icon: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>` }, { id: 'Story', label: 'Story', icon: `<svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>` } ];
+const elements = { appContainer: document.getElementById('app-container'), views: Array.from(document.querySelectorAll('.view')), genreList: document.getElementById('genre-list'), storyList: document.getElementById('story-list'), storySelectionTitle: document.getElementById('story-selection-title'), customIdeaInput: document.getElementById('custom-idea-input'), generatedStoryList: document.getElementById('generated-story-list'), backToGenreButton: document.getElementById('back-to-genre'), backToStoryButton: document.getElementById('back-to-story'), backToCharacterSelect: document.getElementById('back-to-character-select'), backToGenreFromIdea: document.getElementById('back-to-genre-from-idea'), backToIdeaButton: document.getElementById('back-to-idea'), generateScenariosButton: document.getElementById('generate-scenarios-button'), characterList: document.getElementById('character-list'), confirmCharacterButton: document.getElementById('confirm-character-button'), characterNameInput: document.getElementById('character-name-input'), startGameButton: document.getElementById('start-game-button'), storyContainer: document.getElementById('storyContainer'), storyLog: document.getElementById('story-log'), userInput: document.getElementById('user-input'), takeTurnButton: document.getElementById('take-turn-button'), actionTogglesContainer: document.getElementById('action-toggles'), restartButton: document.getElementById('restart-button'), fullscreenButton: document.getElementById('fullscreenButton'), fsEnterIcon: document.getElementById('fs-enter-icon'), fsExitIcon: document.getElementById('fs-exit-icon') };
+
+// --- CORE LOGIC ---
+
+function getSystemPrompt(character) {
+return `You are a master storyteller for an interactive text RPG.
+## TONE & STYLE
+- **Narrative Voice:** Your tone is modern, cinematic, and natural. Write in a spoken American English style. Use contractions (you're, it's, don't). Your pacing is crisp. Your language is evocative but direct. Think of how a great DM would narrate a session live.
+- **Perspective:** Always write in the second person ("You see...", "You feel...").
+- **Interaction:** Never ask "What do you do?". Instead, describe the scene in a way that presents clear choices and ends on a point of tension, prompting the player to act.
+## CHARACTER PERSONA
+- You are narrating the story *for* the player's character. Embody the following persona. This is the lens through which the player experiences everything.
+- **Persona:** ${character.persona}
+## CRITICAL RULE
+- Never break character. If the player's action is strange or impossible, narrate the attempt and its logical, in-world outcome. Your entire response must be the story.`;
+}
+
+async function streamStoryWithRetry(messages, model, retries = 2) {
+for (let i = 0; i <= retries; i++) {
+const p = document.createElement('p');
+p.className = 'story-paragraph';
+elements.storyLog.appendChild(p);
+
+try {
+let fullResponse = '';
+const stream = await puter.ai.chat(messages, { model, stream: true });
+for await (const chunk of stream) {
+if (chunk.text) {
+fullResponse += chunk.text;
+p.textContent = fullResponse;
+elements.storyContainer.scrollTop = elements.storyContainer.scrollHeight;
+}
+}
+if (fullResponse.trim() === '') throw new Error("AI stream was empty.");
+return fullResponse;
+} catch (error) {
+console.error(`Storyteller AI attempt ${i + 1} failed:`, error);
+p.remove();
+if (i === retries) throw new Error(`The storyteller is unresponsive. The issue might be the selected story or a temporary service outage.`);
+}
+}
+}
+
+async function startGame() {
+if (state.isProcessing) return;
+setProcessing(true);
+
+if (state.character.id === 'custom') {
+state.customCharacterName = elements.characterNameInput.value.trim();
+}
+
+const characterName = state.customCharacterName || state.character.name;
+const systemPrompt = getSystemPrompt(state.character);
+const userPrompt = `Begin a new story for a character named ${characterName}. The scenario is: ${state.story}`;
+
+state.history = [{ role: 'system', content: systemPrompt }];
+elements.storyLog.innerHTML = '';
+
+try {
+const messagesForAI = [...state.history, { role: 'user', content: userPrompt }];
+const response = await streamStoryWithRetry(messagesForAI, GAMEPLAY_MODEL);
+state.history.push({ role: 'user', content: userPrompt }, { role: 'assistant', content: response });
+} catch (err) {
+appendErrorText(err.message + " Please try a different story or character.");
+} finally {
+setProcessing(false);
+elements.userInput.focus();
+}
+}
+
+async function takeTurn() {
+const rawText = elements.userInput.value.trim();
+if (!rawText || state.isProcessing) return;
+setProcessing(true);
+
+const correctedText = await correctInputAI(rawText);
+const playerAction = `[My action is to ${state.activeAction}: "${correctedText}"]`;
+
+const p = document.createElement('p');
+p.className = 'story-paragraph text-gray-500 italic';
+p.textContent = playerAction;
+elements.storyLog.appendChild(p);
+elements.storyContainer.scrollTop = elements.storyContainer.scrollHeight;
+
+try {
+const context = getConversationContext();
+const messagesForAI = [...context, { role: 'user', content: playerAction }];
+const response = await streamStoryWithRetry(messagesForAI, GAMEPLAY_MODEL);
+state.history.push({ role: 'user', content: playerAction }, { role: 'assistant', content: response });
+} catch (err) {
+appendErrorText(err.message + " You can try your action again.");
+} finally {
+setProcessing(false);
+elements.userInput.focus();
+}
+}
+
+// --- UI, ANIMATION & EVENT HANDLERS ---
+
+function switchView(newViewId, direction = 1) {
+const currentView = elements.views.find(v => v.id === state.view);
+const newView = document.getElementById(newViewId);
+
+if (currentView === newView) return; // This guard was the source of the bug
+
+const tl = gsap.timeline({
+onComplete: () => {
+state.view = newViewId;
+}
+});
+
+if (currentView) {
+tl.to(currentView, { autoAlpha: 0, x: -50 * direction, duration: 0.3, ease: "power2.in" });
+}
+
+tl.fromTo(newView,
+{ autoAlpha: 0, x: 50 * direction },
+{ autoAlpha: 1, x: 0, duration: 0.3, ease: "power2.out" },
+currentView ? "-=0.15" : 0
+);
+}
+
+function renderList(container, items, handler) {
+container.innerHTML = '';
+items.forEach(item => {
+const button = document.createElement('button');
+button.className = "selection-list-item w-full p-4 rounded-lg flex items-start text-left gap-4";
+button.innerHTML = `<span class="text-sm text-gray-400 mt-1">${item._index || ''}</span><div class="flex-1"><span class="font-semibold text-heading-color">${item.title}</span>${item.description ? `<p class="text-sm text-gray-400 mt-1">${item.description}</p>` : ''}</div><svg class="h-5 w-5 text-gray-500 mt-1 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>`;
+button.onclick = () => handler(item);
+container.appendChild(button);
+});
+gsap.fromTo(container.children, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, stagger: 0.05, duration: 0.4, ease: "power2.out" });
+}
+
+function renderCharacterSelection() {
+elements.characterList.innerHTML = '';
+characters.forEach(char => {
+const card = document.createElement('button');
+card.className = 'character-card p-4 rounded-lg text-left flex flex-col h-full';
+card.dataset.charId = char.id;
+card.innerHTML = `<div class="flex items-center gap-3 mb-3"><div class="w-10 h-10 rounded-full bg-gray-700 flex-shrink-0 flex items-center justify-center font-bold text-xl text-heading-color">${char.avatar}</div><h3 class="font-semibold text-lg text-heading-color">${char.name}</h3></div><p class="text-sm text-gray-400 flex-grow">${char.description}</p>`;
+card.onclick = () => { state.character = char; document.querySelectorAll('.character-card').forEach(c => c.classList.toggle('active', c.dataset.charId === char.id)); elements.confirmCharacterButton.disabled = false; };
+elements.characterList.appendChild(card);
+});
+gsap.fromTo(elements.characterList.children, { autoAlpha: 0, y: 20 }, { autoAlpha: 1, y: 0, stagger: 0.05, duration: 0.4, ease: "power2.out" });
+elements.confirmCharacterButton.disabled = true;
+}
+
+async function handleGenerateScenarios() {
+if (state.isProcessing) return;
+const idea = elements.customIdeaInput.value.trim();
+if (!idea) { alert("Please provide an idea."); return; }
+setProcessing(true, elements.generateScenariosButton);
+
+try {
+const prompt = `Create 4 distinct RPG scenarios from this idea: "${idea}". Respond ONLY with a valid JSON array of objects, each with a "title" and a "prompt" (2-3 sentences).`;
+const response = await puter.ai.chat([{ role: 'user', content: prompt }], { model: SCENARIO_GENERATION_MODEL });
+if (!response || !response.text) throw new Error("AI returned an empty response.");
+const cleanedText = response.text.replace(/```json\n?|\n?```/g, '').trim();
+const scenarios = JSON.parse(cleanedText);
+const items = scenarios.map((s, i) => ({ ...s, _index: i + 1, description: s.prompt }));
+renderList(elements.generatedStoryList, items, (item) => { state.story = item.prompt; renderCharacterSelection(); switchView('character-selection-view'); });
+switchView('scenario-generation-view');
+} catch (err) {
+console.error("Scenario generation failed:", err);
+alert(`The AI could not brainstorm scenarios. It might be having a creative block. Please try a different idea.\n\nError: ${err.message}`);
+} finally {
+setProcessing(false, elements.generateScenariosButton);
+}
+}
+
+function initEventHandlers() {
+elements.backToGenreButton.onclick = () => switchView('genre-selection-view', -1);
+elements.backToStoryButton.onclick = () => switchView('story-selection-view', -1);
+elements.backToCharacterSelect.onclick = () => switchView('character-selection-view', -1);
+elements.backToGenreFromIdea.onclick = () => switchView('genre-selection-view', -1);
+elements.backToIdeaButton.onclick = () => switchView('custom-idea-view', -1);
+elements.confirmCharacterButton.onclick = () => { if (state.character.id === 'custom') { switchView('character-name-view'); } else { switchView('game-view'); startGame(); } };
+elements.startGameButton.onclick = () => { switchView('game-view'); startGame(); };
+elements.generateScenariosButton.onclick = handleGenerateScenarios;
+elements.restartButton.onclick = () => { state = { ...initialState }; init(); };
+elements.characterNameInput.addEventListener('input', () => elements.startGameButton.disabled = elements.characterNameInput.value.trim().length === 0);
+elements.userInput.addEventListener('input', () => { elements.takeTurnButton.disabled = elements.userInput.value.trim().length === 0; elements.userInput.style.height = 'auto'; elements.userInput.style.height = `${elements.userInput.scrollHeight}px`; });
+elements.takeTurnButton.onclick = takeTurn;
+elements.userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); takeTurn(); } });
+elements.fullscreenButton.addEventListener('click', () => { if (!document.fullscreenElement) elements.appContainer.requestFullscreen(); else document.exitFullscreen(); });
+document.addEventListener('fullscreenchange', () => { const isFullscreen = !!document.fullscreenElement; elements.fsEnterIcon.classList.toggle('hidden', isFullscreen); elements.fsExitIcon.classList.toggle('hidden', !isFullscreen); });
+}
+
+// --- UTILITIES ---
+function setProcessing(isProcessing, btn = null) {
+state.isProcessing = isProcessing;
+const allButtons = [elements.generateScenariosButton, elements.confirmCharacterButton, elements.startGameButton, elements.takeTurnButton];
+allButtons.forEach(b => { if (b) b.disabled = isProcessing; });
+if (elements.userInput) elements.userInput.disabled = isProcessing;
+
+if (btn) {
+const textSpan = btn.querySelector('.button-text');
+if (isProcessing) {
+if (textSpan) textSpan.style.opacity = '0';
+if (!btn.querySelector('.button-spinner')) {
+const spinner = document.createElement('div');
+spinner.className = 'button-spinner';
+btn.appendChild(spinner);
+}
+} else {
+if (textSpan) textSpan.style.opacity = '1';
+const spinner = btn.querySelector('.button-spinner');
+if (spinner) spinner.remove();
+}
+}
+if (!isProcessing) {
+if (elements.userInput) {
+elements.userInput.value = '';
+elements.userInput.dispatchEvent(new Event('input'));
+}
+}
+}
+function appendErrorText(errorMessage) { const errorDiv = document.createElement('div'); errorDiv.className = 'error-message'; errorDiv.innerHTML = `<strong>A cosmic disturbance has occurred.</strong><br>${errorMessage}`; elements.storyLog.appendChild(errorDiv); elements.storyContainer.scrollTop = elements.storyContainer.scrollHeight; }
+function getConversationContext() { const maxHistoryLength = 12; if (state.history.length <= maxHistoryLength) return state.history; return [state.history[0], ...state.history.slice(-maxHistoryLength)]; }
+async function correctInputAI(text) { const prompt = `Correct grammar/spelling for this RPG input. Preserve intent. Be concise. Original: "${text}"`; try { const response = await puter.ai.chat([{ role: 'user', content: prompt }], { model: INPUT_CORRECTION_MODEL }); if (!response || !response.text) return text; return response.text.trim().replace(/^"|"$/g, ''); } catch (error) { console.warn("Input correction failed:", error); return text; } }
+
+// --- INITIALIZATION ---
+function init() {
+gsap.from("body", { autoAlpha: 0, duration: 1 });
+switchView('genre-selection-view', 0);
+initEventHandlers();
+
+const genreItems = Object.entries(genres).map(([key, name], i) => ({ _key: key, title: name, _index: i + 1 }));
+renderList(elements.genreList, genreItems, (item) => {
+state.genre = item._key;
+if (item._key === 'custom') {
+elements.customIdeaInput.value = '';
+switchView('custom-idea-view');
+} else {
+elements.storySelectionTitle.textContent = `Choose a ${genres[item._key].toLowerCase()} Story`;
+const storyItems = stories[item._key].map((s, i) => ({ ...s, _index: i + 1, description: s.prompt }));
+renderList(elements.storyList, storyItems, (sItem) => {
+state.story = sItem.prompt;
+renderCharacterSelection();
+switchView('character-selection-view');
+});
+switchView('story-selection-view');
+}
+});
+
+elements.actionTogglesContainer.innerHTML = ''; // Clear toggles on restart
+actions.forEach(action => { const button = document.createElement('button'); button.className = 'action-toggle flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium transition-colors'; button.dataset.action = action.id; button.innerHTML = `${action.icon} ${action.label}`; button.onclick = () => { state.activeAction = action.id; document.querySelectorAll('.action-toggle').forEach(btn => btn.classList.toggle('active', btn.dataset.action === action.id)); elements.userInput.placeholder = `What do you ${action.id.toLowerCase()}?`; }; elements.actionTogglesContainer.appendChild(button); });
+state.activeAction = 'Do';
+document.querySelector('.action-toggle[data-action="Do"]').classList.add('active');
+elements.userInput.placeholder = `What do you ${state.activeAction.toLowerCase()}?`; // Set initial placeholder
+}
+
+init();
+});
+</script>
+</body>
+</html>
