@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TweetTone AI Replier</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .accent-yellow-400 { accent-color: #FBBF24; }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #111827; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #FBBF24; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #F59E0B; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        
+        .toast {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="antialiased bg-black text-white custom-scrollbar">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-5xl">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-yellow-400">TweetTone</h1>
+            <p class="text-gray-400 mt-2">AI-Powered Replies with the Perfect Vibe</p>
+        </header>
+
+        <!-- Tweet Input Section -->
+        <section class="mb-8">
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                <label for="tweet-input" class="block text-sm font-medium text-gray-300 mb-2">Original Tweet</label>
+                <textarea id="tweet-input" rows="4" class="w-full bg-gray-800 border-2 border-gray-700 rounded-md p-3 text-white focus:border-yellow-400 focus:ring-0 transition-colors" placeholder="Click here to automatically paste from clipboard..."></textarea>
+                <div class="text-right mt-3">
+                    <button id="clear-tweet-btn" class="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors">Clear</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tone Selection & Action Section -->
+        <section class="mb-8">
+            <div class="bg-gray-900 border border-gray-800 rounded-lg p-4">
+                <h2 class="text-lg font-bold text-white mb-2">1. Select Reply Tones</h2>
+                <div id="tone-checkboxes" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-4">
+                    <!-- Checkboxes will be injected here -->
+                </div>
+
+                <h2 class="text-lg font-bold text-white mb-2 mt-6">2. Your Selected Tones</h2>
+                 <div id="selected-tones-container" class="flex flex-wrap gap-2 p-3 bg-gray-800 rounded-md min-h-[48px] border border-gray-700 mb-6">
+                    <span id="tones-placeholder" class="text-gray-500">Select tones from the list above...</span>
+                    <!-- Selected tone tags will be injected here -->
+                </div>
+                
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-gray-800">
+                     <div class="w-full sm:w-auto">
+                        <label for="model-selector" class="block text-xs text-gray-400 mb-1">AI Model</label>
+                        <select id="model-selector" class="bg-gray-800 border-2 border-gray-700 rounded-md py-3 px-4 text-white focus:border-yellow-400 focus:ring-0 transition-colors w-full sm:w-auto font-medium">
+                            <!-- AI Models will be injected here -->
+                        </select>
+                    </div>
+                    <button id="generate-btn" class="w-full sm:w-auto py-3 px-8 bg-yellow-400 hover:bg-yellow-500 text-black font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" /></svg>
+                        Generate Replies
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Loading & Results Section -->
+        <main id="results-area">
+            <!-- UPGRADED: Loading indicator now includes a streaming output area -->
+            <div id="loading-indicator" class="hidden text-center my-12">
+                <div class="w-10 h-10 border-4 border-gray-700 border-t-yellow-400 rounded-full animate-spin inline-block"></div>
+                <p class="mt-4 text-lg font-semibold text-yellow-400">The AI is thinking...</p>
+                <p class="text-gray-400">Crafting the perfect replies, please wait.</p>
+                <pre id="streaming-output" class="mt-4 p-4 bg-black border border-gray-700 rounded-lg w-full h-48 overflow-y-auto text-left text-xs whitespace-pre-wrap text-gray-500"></pre>
+            </div>
+            <div id="results-container" class="space-y-6">
+                <!-- AI replies will be injected here -->
+            </div>
+            <div id="results-actions" class="text-center mt-8 hidden">
+                 <button id="clear-all-btn" class="py-2 px-4 bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold rounded-lg transition-colors">Clear All Replies</button>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 right-4 z-50 space-y-2"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- CONFIGURATION ---
+            const CONFIG = {
+                MAX_CHARS: 280,
+                // UPGRADED: Curated list of high-quality, reliable models.
+                AI_MODELS: {
+                    "Claude 4 opus(Fast & Creative)": "openrouter:openai/gpt-4.5-preview",
+                    "OpenAI GPT-4.5 (Powerful All-Rounder)": "openrouter:anthropic/claude-opus-4",
+                    "Google Gemini 2.5 Pro (Large Context)": "openrouter:google/gemini-2.5-pro-preview-06-05",
+                    "Deepseek": "openrouter:deepseek/deepseek-r1-0528",
+                },
+                DEFAULT_MODEL: "openrouter:deepseek/deepseek-r1-0528",
+                TONES: {
+                    Pleasant: "Friendly, positive, encouraging, and generally agreeable. Focus on kindness.",
+                    Harsher: "Critical, blunt, direct, slightly aggressive, but not abusive. Focus on strong, unvarnished opinions.",
+                    Irony: "Conveys a meaning opposite of its literal one for humorous or emphatic effect. Requires subtle understanding.",
+                    Satire: "Uses humor, exaggeration, or ridicule to critique the subject, often in a witty social commentary style.",
+                    Creative: "Imaginative, unique, perhaps poetic or abstract. Encourage novel phrasing and unexpected connections.",
+                    Laidback: "Casual, relaxed, easygoing, and informal. Use common slang or relaxed phrasing where appropriate.",
+                    Apathetic: "Indifferent, lacking emotion, disinterested. Short, unenthusiastic, 'couldn't care less' attitude.",
+                    Sarcastic: "Sharp, mocking, or contemptuous remarks that mean the opposite of what they say. Often used to wound.",
+                    Enthusiastic: "Shows intense and eager enjoyment, interest, or approval. Very energetic and positive.",
+                    Formal: "Serious, official, and correct language. Avoids slang and contractions. Suitable for professional contexts.",
+                    Philosophical: "Deep, thoughtful, and reflective. Ponders the deeper meaning or implications of the topic.",
+                    Humorous: "Aims to be funny, lighthearted, and amusing. Focuses on jokes, puns, or witty observations.",
+                    Analytical: "Breaks down the topic into components, examines it logically and objectively. Data-driven and rational.",
+                    Questioning: "Asks probing questions to challenge assumptions or seek more information. Curious and inquisitive."
+                }
+            };
+
+            // --- STATE ---
+            const state = {
+                isLoading: false,
+                selectedTones: new Set(),
+                currentModel: CONFIG.DEFAULT_MODEL
+            };
+
+            // --- UI ELEMENTS ---
+            const ui = {
+                tweetInput: document.getElementById('tweet-input'),
+                clearTweetBtn: document.getElementById('clear-tweet-btn'),
+                toneCheckboxes: document.getElementById('tone-checkboxes'),
+                selectedTonesContainer: document.getElementById('selected-tones-container'),
+                tonesPlaceholder: document.getElementById('tones-placeholder'),
+                modelSelector: document.getElementById('model-selector'),
+                generateBtn: document.getElementById('generate-btn'),
+                loadingIndicator: document.getElementById('loading-indicator'),
+                streamingOutput: document.getElementById('streaming-output'), // For live stream
+                resultsContainer: document.getElementById('results-container'),
+                resultsActions: document.getElementById('results-actions'),
+                clearAllBtn: document.getElementById('clear-all-btn'),
+                toastContainer: document.getElementById('toast-container'),
+            };
+
+            // --- INITIALIZATION ---
+            function init() {
+                populateToneCheckboxes();
+                populateModelSelector();
+                addEventListeners();
+            }
+
+            function populateToneCheckboxes() {
+                ui.toneCheckboxes.innerHTML = Object.keys(CONFIG.TONES).map(tone => `
+                    <label class="flex items-center space-x-3 cursor-pointer p-2 rounded-md hover:bg-gray-800 transition-colors">
+                        <input type="checkbox" data-tone="${tone}" class="h-4 w-4 rounded bg-gray-700 border-gray-600 text-yellow-400 focus:ring-yellow-400 focus:ring-offset-gray-900 accent-yellow-400">
+                        <span class="text-white font-medium">${tone}</span>
+                    </label>
+                `).join('');
+            }
+            
+            function populateModelSelector() {
+                ui.modelSelector.innerHTML = Object.entries(CONFIG.AI_MODELS).map(([name, value]) =>
+                    `<option value="${value}" ${value === CONFIG.DEFAULT_MODEL ? 'selected' : ''}>${name}</option>`
+                ).join('');
+            }
+
+            // --- UI RENDERING ---
+            function renderSelectedTones() {
+                const tagsHTML = Array.from(state.selectedTones).map(tone => `
+                    <div class="flex items-center gap-2 bg-yellow-400 text-black text-sm font-semibold px-3 py-1 rounded-full">
+                        <span>${tone}</span>
+                        <button data-tone-remove="${tone}" class="text-yellow-800 hover:text-black transition-colors" title="Remove ${tone}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                    </div>
+                `).join('');
+
+                ui.selectedTonesContainer.innerHTML = '';
+                ui.selectedTonesContainer.appendChild(ui.tonesPlaceholder);
+                ui.selectedTonesContainer.insertAdjacentHTML('beforeend', tagsHTML);
+                ui.tonesPlaceholder.classList.toggle('hidden', state.selectedTones.size > 0);
+            }
+
+            function renderResults(data) {
+                clearResults(); // Clear previous results before rendering new ones
+                for (const [tone, replies] of Object.entries(data)) {
+                    if (!Array.isArray(replies)) continue;
+                    const toneSectionHTML = `
+                        <div class="bg-gray-900 border border-gray-800 rounded-lg p-4 animate-fade-in">
+                            <h3 class="text-xl font-bold text-yellow-400 mb-4">${tone}</h3>
+                            <div class="space-y-3">
+                                ${replies.map(reply => createReplyCard(String(reply))).join('')}
+                            </div>
+                        </div>
+                    `;
+                    ui.resultsContainer.insertAdjacentHTML('beforeend', toneSectionHTML);
+                }
+                ui.resultsActions.classList.remove('hidden');
+            }
+            
+            function createReplyCard(reply) {
+                const charCount = reply.length;
+                const charColor = charCount > CONFIG.MAX_CHARS ? 'text-red-500' : 'text-gray-400';
+                // FIXED: Correctly escape quotes for use in HTML attributes.
+                const escapedReply = reply.replace(/"/g, '"');
+                
+                // SECURITY-FIX: Create a paragraph and set its textContent to prevent XSS
+                const p = document.createElement('p');
+                p.className = 'flex-grow text-white';
+                p.textContent = reply;
+
+                return `
+                    <div class="bg-gray-800 rounded-md p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        ${p.outerHTML}
+                        <div class="flex items-center self-end sm:self-center flex-shrink-0 gap-3">
+                            <span class="text-xs font-mono ${charColor}">${charCount}/${CONFIG.MAX_CHARS}</span>
+                            <button class="copy-btn p-1.5 rounded-md hover:bg-gray-700 transition-colors" data-text="${escapedReply}" title="Copy">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                            </button>
+                            <button class="tweet-btn p-1.5 rounded-md bg-yellow-400 hover:bg-yellow-500 transition-colors" data-text="${escapedReply}" title="Tweet this reply">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-black" fill="currentColor" viewBox="0 0 16 16"><path d="M5.026 15c6.038 0 9.341-5.003 9.341-9.334 0-.14 0-.282-.006-.422A6.685 6.685 0 0 0 16 3.542a6.658 6.658 0 0 1-1.889.518 3.301 3.301 0 0 0 1.447-1.817 6.533 6.533 0 0 1-2.087.793A3.286 3.286 0 0 0 7.875 6.03a9.325 9.325 0 0 1-6.767-3.429 3.289 3.289 0 0 0 1.018 4.382A3.323 3.323 0 0 1 .64 6.575v.045a3.288 3.288 0 0 0 2.632 3.218 3.203 3.203 0 0 1-.865.115 3.23 3.23 0 0 1-.614-.057 3.283 3.283 0 0 0 3.067 2.277A6.588 6.588 0 0 1 .78 13.58a6.32 6.32 0 0 1-.78-.045A9.344 9.344 0 0 0 5.026 15z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function clearResults() {
+                ui.resultsContainer.innerHTML = '';
+                ui.resultsActions.classList.add('hidden');
+            }
+
+            function toggleLoading(isLoading) {
+                state.isLoading = isLoading;
+                if (isLoading) {
+                    clearResults();
+                    ui.loadingIndicator.classList.remove('hidden');
+                    ui.streamingOutput.textContent = ''; // Clear previous stream
+                    ui.generateBtn.disabled = true;
+                    ui.modelSelector.disabled = true;
+                } else {
+                    ui.loadingIndicator.classList.add('hidden');
+                    ui.generateBtn.disabled = false;
+                    ui.modelSelector.disabled = false;
+                }
+            }
+            
+            // --- EVENT LISTENERS & HANDLERS ---
+            function addEventListeners() {
+                ui.tweetInput.addEventListener('click', handlePasteClick);
+                ui.clearTweetBtn.addEventListener('click', () => ui.tweetInput.value = '');
+                ui.modelSelector.addEventListener('change', (e) => state.currentModel = e.target.value);
+                ui.generateBtn.addEventListener('click', handleGenerateClick);
+                ui.clearAllBtn.addEventListener('click', clearResults);
+                ui.toneCheckboxes.addEventListener('change', handleToneCheckboxChange);
+                ui.selectedTonesContainer.addEventListener('click', handleRemoveToneClick);
+                ui.resultsContainer.addEventListener('click', handleResultsActionClick);
+            }
+
+            async function handlePasteClick() {
+                if (ui.tweetInput.value) return; 
+                try {
+                    const text = await navigator.clipboard.readText();
+                    if (text) ui.tweetInput.value = text;
+                } catch (err) {
+                    console.warn("Could not paste from clipboard:", err.message);
+                    ui.tweetInput.placeholder = "Auto-paste failed. Please paste manually (Ctrl+V).";
+                }
+            }
+            
+            function handleToneCheckboxChange(e) {
+                if (e.target.type === 'checkbox') {
+                    const tone = e.target.dataset.tone;
+                    e.target.checked ? state.selectedTones.add(tone) : state.selectedTones.delete(tone);
+                    renderSelectedTones();
+                }
+            }
+            
+            function handleRemoveToneClick(e) {
+                const button = e.target.closest('[data-tone-remove]');
+                if (button) {
+                    const toneToRemove = button.dataset.toneRemove;
+                    state.selectedTones.delete(toneToRemove);
+                    const checkbox = ui.toneCheckboxes.querySelector(`input[data-tone="${toneToRemove}"]`);
+                    if (checkbox) checkbox.checked = false;
+                    renderSelectedTones();
+                }
+            }
+
+            // --- CORE AI LOGIC ---
+
+            async function handleGenerateClick() {
+                const tweetText = ui.tweetInput.value.trim();
+                if (!tweetText) {
+                    showToast("Please enter a tweet to reply to.", "error");
+                    return;
+                }
+                if (state.selectedTones.size === 0) {
+                    showToast("Please select at least one tone.", "error");
+                    return;
+                }
+                
+                toggleLoading(true);
+                let fullResponseText = '';
+                
+                try {
+                    const systemPrompt = buildSystemPrompt(Array.from(state.selectedTones));
+                    const userPrompt = tweetText;
+                    
+                    // FIXED: Implemented streaming response handling
+                    const responseStream = await puter.ai.chat(
+                        [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], 
+                        { model: state.currentModel, stream: true }
+                    );
+                    
+                    for await (const chunk of responseStream) {
+                        if (chunk && chunk.text) {
+                            fullResponseText += chunk.text;
+                            ui.streamingOutput.textContent = fullResponseText;
+                            ui.streamingOutput.scrollTop = ui.streamingOutput.scrollHeight;
+                        }
+                    }
+
+                    // Now parse the complete response after the stream has finished
+                    const jsonResponse = parseJsonResponse(fullResponseText);
+                    renderResults(jsonResponse);
+
+                } catch (error) {
+                    console.error("AI Generation Error:", error, "Raw AI Output:", fullResponseText);
+                    // UPGRADED: Show the raw output on error for easy debugging
+                    const errorMessage = `
+                        <div class="text-center p-4 bg-red-900/50 border border-red-700 rounded-lg">
+                            <p class="text-red-300 font-bold">${error.message}</p>
+                            <p class="text-xs text-gray-400 mt-4">Raw AI Output:</p>
+                            <pre class="mt-2 p-2 bg-black/50 text-left text-xs whitespace-pre-wrap">${fullResponseText || 'No content was streamed from the AI.'}</pre>
+                        </div>
+                    `;
+                    ui.resultsContainer.innerHTML = errorMessage;
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            function handleResultsActionClick(e) {
+                const copyBtn = e.target.closest('.copy-btn');
+                const tweetBtn = e.target.closest('.tweet-btn');
+                if (copyBtn) handleCopy(copyBtn.dataset.text, copyBtn);
+                if (tweetBtn) handleTweet(tweetBtn.dataset.text);
+            }
+
+            function buildSystemPrompt(activeTones) {
+                const toneInstructions = activeTones.map(tone => `- **${tone}**: ${CONFIG.TONES[tone]}`).join('\n');
+                return `You are TweetTone AI, a specialized assistant for crafting tweet replies. Your task is to analyze an incoming tweet and generate 5 distinct replies for EACH of the requested tones.
+
+**CRITICAL INSTRUCTIONS:**
+1.  **JSON ONLY:** You MUST respond with ONLY a valid JSON object and nothing else. No introductions, no explanations, no "Here is the JSON:". Your entire response must start with { and end with }.
+2.  **JSON STRUCTURE:** The JSON object's keys must be the requested tone names. Each key's value must be an array of 5 unique strings (the replies).
+3.  **CHARACTER LIMIT:** Every single generated reply MUST be under ${CONFIG.MAX_CHARS} characters. This is a strict rule.
+4.  **TONE ADHERENCE:** Strictly adhere to the personality of each requested tone defined below. The 5 replies for a tone should be varied but consistent in that tone's style.
+
+**REQUESTED TONE DEFINITIONS:**
+${toneInstructions}
+
+**EXAMPLE JSON STRUCTURE FOR A REQUEST OF "Pleasant" and "Harsher":**
+{
+  "Pleasant": [ "reply 1", "reply 2", "reply 3", "reply 4", "reply 5" ],
+  "Harsher": [ "reply 1", "reply 2", "reply 3", "reply 4", "reply 5" ]
+}`;
+            }
+
+            // UPGRADED: More robust JSON parsing to handle markdown code fences and other noise.
+            function parseJsonResponse(text) {
+                try {
+                    // Find the first '{' and the last '}' to extract the JSON object, even if it's inside markdown backticks.
+                    const match = text.match(/\{[\s\S]*\}/);
+                    if (!match) {
+                        throw new Error("AI response did not contain a valid JSON object.");
+                    }
+                    return JSON.parse(match[0]);
+                } catch (e) {
+                    console.error("Failed to parse JSON:", text);
+                    throw new Error("The AI returned a malformed response that could not be read. Please check the raw output and try again.");
+                }
+            }
+            
+            // --- HELPERS ---
+            
+            function showToast(message, type = 'info') {
+                const colors = { success: 'bg-green-500', error: 'bg-red-500', info: 'bg-yellow-600' };
+                const toast = document.createElement('div');
+                toast.className = `toast p-4 rounded-lg text-white shadow-lg ${colors[type]}`;
+                toast.textContent = message;
+                ui.toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.add('show'), 10);
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 500);
+                }, 4000);
+            }
+            
+            async function handleCopy(text, buttonElement) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    const originalIcon = buttonElement.innerHTML;
+                    buttonElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>`;
+                    buttonElement.disabled = true;
+                    setTimeout(() => {
+                        buttonElement.innerHTML = originalIcon;
+                        buttonElement.disabled = false;
+                    }, 2000);
+                } catch (err) {
+                    showToast("Failed to copy text.", 'error');
+                }
+            }
+
+            function handleTweet(text) {
+                 const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`;
+                 window.open(tweetUrl, '_blank');
+            }
+            
+            // --- LET'S GO ---
+            init();
+        });
+    </script>
+
+</body>
+</html>
