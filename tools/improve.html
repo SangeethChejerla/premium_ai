@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grammar & Tone AI - Advanced Correction</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #020617; /* slate-950 */
+            --text-color: #E2E8F0; /* slate-200 */
+            --border-color: #1E293B; /* slate-800 */
+            --input-bg: #0F172A; /* slate-900 */
+            --primary-green: #10B981; /* emerald-500 */
+            --primary-green-light: rgba(16, 185, 129, 0.15);
+            --primary-red-light: rgba(239, 68, 68, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--input-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary-green); }
+
+        /* Loading Spinner */
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border: 5px solid var(--border-color);
+            border-bottom-color: var(--primary-green);
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+        }
+        @keyframes rotation {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Result card animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .result-card {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        /* Explanation Dropdown Styling */
+        #explanationListContainer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-in-out, opacity 0.3s ease-in-out, margin-top 0.5s ease-in-out;
+            opacity: 0;
+            margin-top: 0;
+        }
+        #explanationListContainer.expanded {
+            max-height: 500px; /* Adjust as needed */
+            opacity: 1;
+            margin-top: 1rem;
+        }
+        .change-item-original {
+            text-decoration: line-through;
+            color: #f87171; /* red-400 */
+            background-color: var(--primary-red-light);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        .change-item-corrected {
+            color: #34d399; /* emerald-400 */
+            background-color: var(--primary-green-light);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div id="appContainer" class="container mx-auto p-4 md:p-8 max-w-7xl">
+        <header class="flex justify-between items-center mb-8">
+            <div class="text-center flex-grow">
+                <h1 class="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-emerald-400 to-cyan-400">
+                    Grammar & Tone AI
+                </h1>
+                <p class="text-lg text-slate-400 mt-2">Correct mistakes, get clear explanations, and learn to use new phrases.</p>
+            </div>
+            <button id="fullscreenButton" class="p-2 text-slate-400 hover:text-white transition-colors" title="Toggle Fullscreen">
+                <svg id="fs-enter-icon" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9m5.25 11.25h-4.5m4.5 0v-4.5m0 4.5L15 15" /></svg>
+                <svg id="fs-exit-icon" class="w-6 h-6 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9V4.5M15 9h4.5M15 9l5.25-5.25M15 15v4.5M15 15h4.5M15 15l5.25 5.25" /></svg>
+            </button>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Input Column -->
+            <div class="flex flex-col space-y-4">
+                <div class="relative">
+                    <textarea id="userInput" class="w-full h-64 p-4 bg-slate-950 border-2 border-slate-800 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors" placeholder="Paste or type your text here..."></textarea>
+                    <div id="charCounter" class="absolute bottom-3 right-3 text-xs text-slate-500">0 / 2000</div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="modelSelect" class="block text-sm font-medium text-slate-400 mb-2">AI Model</label>
+                        <select id="modelSelect" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors">
+                            <option value="openrouter:openai/gpt-4o">OpenAI GPT-4o</option>
+                                <option value="openrouter:anthropic/claude-opus-4">Anthropic Claude 4 opus</option>
+                        <option value="openrouter:openai/gpt-4.5-preview">OpenAI GPT-4.5 Preview</option>
+                        <option value="openrouter:google/gemini-2.5-pro-preview-06-05">Gemini 2.5 pro</option>
+
+                        <option value="openrouter:deepseek/deepseek-r1-0528"> DeepseekR1 </option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="toneSelect" class="block text-sm font-medium text-slate-400 mb-2">Rephrase Tone</label>
+                        <select id="toneSelect" class="w-full p-3 bg-slate-950 border border-slate-800 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-colors">
+                            <option value="Professional">Professional</option>
+                            <option value="Casual">Casual</option>
+                            <option value="Concise">Concise</option>
+                            <option value="Creative">Creative</option>
+                            <option value="Confident">Confident</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-4 pt-2">
+                    <button id="submitButton" class="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white font-bold rounded-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100 flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 15l.813-.904L12 12l-2.187-2.096L9 9l.813.904L12 12l-2.187 2.096zM15 15.904L14.187 15 15 14.096 17.187 12 15 9.904 14.187 9 15 9.904 17.187 12 15 14.096zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        Analyze Text
+                    </button>
+                    <button id="exampleButton" class="py-3 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors whitespace-nowrap">Try an Example</button>
+                    <button id="clearButton" class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors" title="Clear All">
+                        <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9.75L14.25 12m0 0l2.25 2.25M14.25 12L12 14.25m-2.58 4.92l-6.375-6.375a1.125 1.125 0 010-1.59L9.42 4.83c.211-.211.498-.33.796-.33H19.5a2.25 2.25 0 012.25 2.25v10.5a2.25 2.25 0 01-2.25 2.25h-9.284c-.298 0-.585-.119-.796-.33z" /></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Output Column -->
+            <div id="outputContainer" class="bg-slate-950 border-2 border-slate-800 rounded-lg p-6 min-h-[400px] flex flex-col relative overflow-hidden">
+                <div id="placeholder" class="m-auto text-center text-slate-500">
+                    <svg class="w-16 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <h3 class="text-xl font-semibold">Your results will appear here</h3>
+                    <p class="mt-1">Enter some text and click the button to get started.</p>
+                </div>
+
+                <div id="loadingIndicator" class="hidden absolute inset-0 bg-slate-950 bg-opacity-80 flex-col items-center justify-center z-20">
+                    <div class="spinner"></div>
+                    <p class="mt-4 text-lg font-medium text-slate-300">AI is analyzing...</p>
+                </div>
+
+                 <div id="errorDisplay" class="hidden m-auto text-center text-red-400">
+                    <svg class="w-16 h-16 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" /></svg>
+                    <h3 class="text-xl font-semibold">An Error Occurred</h3>
+                    <p id="errorMessage" class="mt-1 text-sm"></p>
+                </div>
+                
+                <div id="results" class="hidden flex-1 flex-col space-y-8 overflow-y-auto pr-2">
+                    <!-- NEW Corrected Text Section -->
+                    <div id="correctedTextResult" class="result-card opacity-0">
+                        <div class="flex justify-between items-center mb-3">
+                            <h2 class="text-xl font-bold text-emerald-400">Corrected Text</h2>
+                            <button id="copyCorrectedButton" class="copy-button p-1.5 text-slate-400 hover:text-white rounded-md transition-colors" title="Copy Corrected Text">
+                                <svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div id="correctedTextOutput" class="p-4 bg-black rounded-md text-lg leading-relaxed border border-slate-800"></div>
+                        <div id="explanationToggleContainer" class="mt-2 text-center hidden">
+                            <button id="explanationToggleButton" class="text-sm text-emerald-400 hover:text-emerald-300 font-semibold py-2 px-4 rounded-md transition-colors flex items-center gap-2 mx-auto">
+                                <span id="toggleButtonText">Show Changes</span>
+                                <svg id="toggleButtonIcon" class="w-4 h-4 transition-transform" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5" /></svg>
+                            </button>
+                        </div>
+                        <div id="explanationListContainer">
+                            <ul id="explanationList" class="space-y-3 p-4 bg-black/50 border-t border-slate-800"></ul>
+                        </div>
+                    </div>
+                    
+                    <div id="rephrasedResult" class="result-card opacity-0" style="animation-delay: 0.2s;">
+                        <h2 class="text-xl font-bold text-emerald-400 mb-3">Rephrased (<span id="rephraseTone"></span>)</h2>
+                        <ul id="rephrasedOutput" class="space-y-3"></ul>
+                    </div>
+
+                    <div id="usageResult" class="result-card opacity-0" style="animation-delay: 0.4s;">
+                        <h2 class="text-xl font-bold text-emerald-400 mb-3">Usage Examples</h2>
+                        <ul id="usageOutput" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- DOM Elements ---
+        const userInput = document.getElementById('userInput');
+        const submitButton = document.getElementById('submitButton');
+        const clearButton = document.getElementById('clearButton');
+        const exampleButton = document.getElementById('exampleButton');
+        const fullscreenButton = document.getElementById('fullscreenButton');
+        const modelSelect = document.getElementById('modelSelect');
+        const toneSelect = document.getElementById('toneSelect');
+        const charCounter = document.getElementById('charCounter');
+        const placeholder = document.getElementById('placeholder');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessage = document.getElementById('errorMessage');
+        const results = document.getElementById('results');
+
+        // New Corrected Text Elements
+        const correctedTextResult = document.getElementById('correctedTextResult');
+        const correctedTextOutput = document.getElementById('correctedTextOutput');
+        const copyCorrectedButton = document.getElementById('copyCorrectedButton');
+        const explanationToggleContainer = document.getElementById('explanationToggleContainer');
+        const explanationToggleButton = document.getElementById('explanationToggleButton');
+        const explanationListContainer = document.getElementById('explanationListContainer');
+        const explanationList = document.getElementById('explanationList');
+        const toggleButtonText = document.getElementById('toggleButtonText');
+        const toggleButtonIcon = document.getElementById('toggleButtonIcon');
+        
+        // Other result elements
+        const rephrasedResult = document.getElementById('rephrasedResult');
+        const rephrasedOutput = document.getElementById('rephrasedOutput');
+        const rephraseTone = document.getElementById('rephraseTone');
+        const usageResult = document.getElementById('usageResult');
+        const usageOutput = document.getElementById('usageOutput');
+        
+        const MAX_CHARS = 2000;
+
+        // --- Event Listeners ---
+        submitButton.addEventListener('click', handleSubmission);
+        clearButton.addEventListener('click', clearAll);
+        exampleButton.addEventListener('click', loadExample);
+        userInput.addEventListener('input', updateCharCounter);
+        fullscreenButton.addEventListener('click', toggleFullscreen);
+        explanationToggleButton.addEventListener('click', toggleExplanations);
+        modelSelect.addEventListener('change', () => savePreference('model', modelSelect.value));
+        toneSelect.addEventListener('change', () => savePreference('tone', toneSelect.value));
+
+        // --- NEW PROMPT LOGIC ---
+        const createPrompt = (text, tone) => {
+            return `You are an expert grammar and style editor. Analyze the user's text and provide a structured response.
+Follow this sequence and XML tag format precisely. Do not add any text outside the tags.
+
+1.  First, stream the fully corrected version of the text inside <CORRECTED_TEXT> tags.
+
+2.  Next, stream a JSON array of the specific changes made inside <CHANGES> tags. Each object must have four keys:
+    - "type": A category from this list: "Capitalization", "Punctuation", "Grammar", "Word Choice", "Fluency", "Clarity".
+    - "original": The exact text that was removed or replaced. An empty string "" if it's a pure addition.
+    - "corrected": The exact text that was added. An empty string "" if it's a pure deletion.
+    - "explanation": A user-friendly sentence explaining why the change was made.
+    If no changes were made, provide an empty array [].
+
+3.  Then, stream a list of 5 rephrased versions of the text in the specified tone, inside <REPHRASED> tags. Each option must be on a new line starting with "• ".
+
+4.  Finally, stream a list of 3 practical usage examples for the corrected/rephrased text inside <USAGE_EXAMPLES> tags. Each example should show a short conversational context. Start each with "• ".
+
+EXAMPLE <CHANGES> FORMAT:
+<CHANGES>[{"type": "Capitalization", "original": "this", "corrected": "This", "explanation": "Sentences should begin with a capital letter."}, {"type": "Punctuation", "original": ",", "corrected": "", "explanation": "The comma was removed to improve the flow of the sentence."}]</CHANGES>
+
+User's Text: "${text}"
+Rephrasing Tone: ${tone}`;
+        };
+
+        // --- Core Application Logic ---
+        async function handleSubmission() {
+            const originalText = userInput.value.trim();
+            if (!originalText) return;
+            if (originalText.length > MAX_CHARS) return alert(`Text exceeds ${MAX_CHARS} character limit.`);
+
+            setLoadingState(true);
+            clearPreviousResults();
+
+            const model = modelSelect.value;
+            const tone = toneSelect.value;
+            const prompt = createPrompt(originalText, tone);
+            
+            let buffer = '';
+            const orderedSections = ['CORRECTED_TEXT', 'CHANGES', 'REPHRASED', 'USAGE_EXAMPLES'];
+            let sectionIndex = 0;
+
+            try {
+                const stream = await puter.ai.chat([{ role: 'user', content: prompt }], { model, stream: true });
+
+                for await (const chunk of stream) {
+                    buffer += chunk.text || '';
+
+                    while (sectionIndex < orderedSections.length) {
+                        const currentSectionName = orderedSections[sectionIndex];
+                        const startTag = `<${currentSectionName}>`;
+                        const endTag = `</${currentSectionName}>`;
+
+                        const startTagPos = buffer.indexOf(startTag);
+                        const endTagPos = buffer.indexOf(endTag);
+
+                        if (startTagPos !== -1 && endTagPos !== -1 && startTagPos < endTagPos) {
+                            const content = buffer.substring(startTagPos + startTag.length, endTagPos);
+                            processSection(currentSectionName, content, tone);
+                            buffer = buffer.substring(endTagPos + endTag.length);
+                            sectionIndex++;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                if (sectionIndex === 0) { // Check if any section was processed
+                     throw new Error("The AI response was empty or in an incorrect format. Please try again or use a different model.");
+                }
+            } catch (err) {
+                console.error("AI API Error:", err);
+                displayError(err.message);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        function processSection(sectionName, content, tone) {
+            showResultSection(sectionName.toLowerCase().replace('_', '-'), tone);
+            switch(sectionName) {
+                case 'CORRECTED_TEXT':
+                    renderCorrectedText(content);
+                    break;
+                case 'CHANGES':
+                    renderChanges(content);
+                    break;
+                case 'REPHRASED':
+                    renderRephrased(content, tone);
+                    break;
+                case 'USAGE_EXAMPLES':
+                    renderUsageExamples(content);
+                    break;
+            }
+        }
+
+        // --- UI Rendering ---
+        function setLoadingState(isLoading) {
+            submitButton.disabled = isLoading;
+            if (isLoading) {
+                placeholder.classList.add('hidden');
+                errorDisplay.classList.add('hidden');
+                results.classList.remove('hidden');
+                results.classList.add('flex');
+                loadingIndicator.classList.remove('hidden');
+                loadingIndicator.classList.add('flex');
+            } else {
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.classList.remove('flex');
+            }
+        }
+
+        function clearPreviousResults() {
+            const sections = [correctedTextResult, rephrasedResult, usageResult];
+            sections.forEach(s => {
+                s.style.display = 'none';
+                s.classList.add('opacity-0');
+            });
+            correctedTextOutput.innerHTML = '';
+            rephrasedOutput.innerHTML = '';
+            usageOutput.innerHTML = '';
+            explanationList.innerHTML = '';
+            explanationToggleContainer.classList.add('hidden');
+            explanationListContainer.classList.remove('expanded');
+        }
+
+        function showResultSection(sectionClass, tone) {
+            if (sectionClass === 'corrected-text') correctedTextResult.style.display = 'block';
+            if (sectionClass === 'rephrased') {
+                rephraseTone.textContent = tone;
+                rephrasedResult.style.display = 'block';
+            }
+            if (sectionClass === 'usage-examples') usageResult.style.display = 'block';
+        }
+        
+        function displayError(message) {
+            results.classList.add('hidden');
+            results.classList.remove('flex');
+            placeholder.classList.add('hidden');
+            errorMessage.textContent = message;
+            errorDisplay.classList.remove('hidden');
+        }
+
+        function renderCorrectedText(text) {
+            correctedTextOutput.textContent = text;
+            copyCorrectedButton.onclick = () => copyToClipboard(text, copyCorrectedButton);
+        }
+
+        function renderChanges(changesJSON) {
+            let changes = [];
+            try {
+                changes = JSON.parse(changesJSON);
+                if (!Array.isArray(changes)) throw new Error();
+            } catch (e) {
+                console.error("Failed to parse CHANGES JSON:", changesJSON);
+                explanationToggleContainer.classList.add('hidden');
+                return;
+            }
+
+            if (changes.length === 0) {
+                explanationToggleContainer.classList.remove('hidden');
+                toggleButtonText.textContent = "No changes were made";
+                explanationToggleButton.disabled = true;
+                return;
+            }
+
+            explanationToggleButton.disabled = false;
+            toggleButtonText.textContent = `Show ${changes.length} Changes`;
+            explanationToggleContainer.classList.remove('hidden');
+            
+            explanationList.innerHTML = '';
+            changes.forEach(change => {
+                const li = document.createElement('li');
+                li.className = 'flex items-start gap-4';
+                li.innerHTML = `
+                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-slate-700 text-emerald-400">
+                        ${getIconForType(change.type)}
+                    </div>
+                    <div class="flex-1">
+                        <p class="text-slate-300">${change.explanation}</p>
+                        <p class="text-sm mt-1 font-mono">
+                            ${change.original ? `<span class="change-item-original">${escapeHtml(change.original)}</span> →` : ''}
+                            <span class="change-item-corrected">${escapeHtml(change.corrected) || '""'}</span>
+                        </p>
+                    </div>
+                `;
+                explanationList.appendChild(li);
+            });
+        }
+
+        function renderRephrased(optionsStr, tone) {
+            renderListOutput(rephrasedOutput, optionsStr, true);
+            if (rephrasedOutput.children.length === 0) rephrasedResult.style.display = 'none';
+        }
+
+        function renderUsageExamples(examplesStr) {
+            renderListOutput(usageOutput, examplesStr, false);
+            if (usageOutput.children.length === 0) usageResult.style.display = 'none';
+        }
+
+        function renderListOutput(outputElement, contentStr, hasCopyButtons) {
+            outputElement.innerHTML = '';
+            const items = contentStr.split('• ').map(o => o.trim()).filter(Boolean);
+            if (items.length === 0) return;
+
+            items.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'p-3 bg-black rounded-md border border-slate-800 hover:border-emerald-500 transition-colors flex items-center justify-between gap-3';
+                
+                const textSpan = document.createElement('span');
+                textSpan.textContent = item;
+                li.appendChild(textSpan);
+
+                if (hasCopyButtons) {
+                    const copyButton = document.createElement('button');
+                    copyButton.title = "Copy to clipboard";
+                    copyButton.className = "copy-button text-slate-400 hover:text-white transition-colors p-1 rounded-md flex-shrink-0";
+                    copyButton.innerHTML = `<svg class="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>`;
+                    copyButton.onclick = () => copyToClipboard(item, copyButton);
+                    li.appendChild(copyButton);
+                }
+                outputElement.appendChild(li);
+            });
+        }
+        
+        // --- Utility Functions ---
+        function clearAll() {
+            userInput.value = '';
+            updateCharCounter();
+            results.classList.add('hidden');
+            errorDisplay.classList.add('hidden');
+            placeholder.classList.remove('hidden');
+            clearPreviousResults();
+        }
+
+        function loadExample() {
+            userInput.value = "this is one of those things, i started hating at first glance. its just not for me i guess";
+            updateCharCounter();
+            handleSubmission();
+        }
+
+        function toggleExplanations() {
+            const isExpanded = explanationListContainer.classList.toggle('expanded');
+            toggleButtonText.textContent = isExpanded ? 'Hide Changes' : `Show ${explanationList.children.length} Changes`;
+            toggleButtonIcon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+        }
+
+        function getIconForType(type) {
+            const iconMap = {
+                'Punctuation': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 5a1 1 0 112 0v6a1 1 0 11-2 0V5zm1 11a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd" /></svg>`,
+                'Capitalization': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.394 4.083c.497-1.446 2.716-1.446 3.213 0l.15.435a.5.5 0 00.65.29l.473-.243c1.33-.679 2.825.816 2.146 2.146l-.243.473a.5.5 0 00.29.65l.435.15c1.446.497 1.446 2.716 0 3.213l-.435.15a.5.5 0 00-.29.65l.243.473c.679 1.33-.816 2.825-2.146 2.146l-.473-.243a.5.5 0 00-.65.29l-.15.435c-.497 1.446-2.716 1.446-3.213 0l-.15-.435a.5.5 0 00-.65-.29l-.473.243c-1.33.679-2.825-.816-2.146-2.146l.243-.473a.5.5 0 00-.29-.65l-.435-.15c-1.446-.497-1.446-2.716 0-3.213l.435-.15a.5.5 0 00.29-.65l-.243-.473c-.679-1.33.816-2.825 2.146-2.146l.473.243a.5.5 0 00.65-.29l.15-.435zM9 8a1 1 0 011-1h.01a1 1 0 110 2H10a1 1 0 01-1-1z" /></svg>`, // Placeholder, better icon needed
+                'Grammar': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2H4zm3.293 11.707a1 1 0 001.414 0L10 12.414l1.293 1.293a1 1 0 101.414-1.414L11.414 11l1.293-1.293a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 1.414L8.586 11l-1.293 1.293a1 1 0 000 1.414z" clip-rule="evenodd" /></svg>`,
+                'Clarity': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.022 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" /></svg>`,
+                'Fluency': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path d="M3.5 2.5a.5.5 0 00-1 0v15a.5.5 0 001 0v-5.382l.33.22c2.095 1.4 4.78.893 6.464-1.187a.5.5 0 00-.688-.732 6.992 6.992 0 01-5.106.945V2.5zM16.5 17.5a.5.5 0 001 0v-15a.5.5 0 00-1 0v5.382l-.33-.22c-2.095-1.4-4.78-.893-6.464 1.187a.5.5 0 00.688.732 6.992 6.992 0 015.106-.945V17.5z" /></svg>`,
+                'Word Choice': `<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.5 2a.5.5 0 01.5.5v1.879a1.5 1.5 0 01-.44 1.06L3.707 7.293a1 1 0 01-.707.293H2.5a.5.5 0 010-1H3a.5.5 0 00.354-.146L5.5 4.414V2.5a.5.5 0 01-.5-.5zM15.5 2a.5.5 0 00-.5.5v1.879a1.5 1.5 0 00.44 1.06L17.293 7.293a1 1 0 00.707.293H18.5a.5.5 0 000-1H18a.5.5 0 01-.354-.146L15.5 4.414V2.5a.5.5 0 00.5-.5zM5 10a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd" /></svg>`
+            };
+            // The Capitalization icon is a bit ugly, let's use a better one.
+            iconMap['Capitalization'] = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 11l7-7 7 7M5 19l7-7 7 7"></path></svg>`;
+            return iconMap[type] || iconMap['Grammar']; // Default to grammar icon
+        }
+
+        function updateCharCounter() {
+            const count = userInput.value.length;
+            charCounter.textContent = `${count} / ${MAX_CHARS}`;
+            charCounter.style.color = count > MAX_CHARS ? '#F87171' : '#94A3B8';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function copyToClipboard(text, buttonElement) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalContent = buttonElement.innerHTML;
+                buttonElement.innerHTML = `<svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+                setTimeout(() => {
+                    buttonElement.innerHTML = originalContent;
+                }, 2000);
+            });
+        }
+        
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+        
+        document.addEventListener('fullscreenchange', () => {
+            const enterIcon = document.getElementById('fs-enter-icon');
+            const exitIcon = document.getElementById('fs-exit-icon');
+            if (document.fullscreenElement) {
+                enterIcon.classList.add('hidden');
+                exitIcon.classList.remove('hidden');
+            } else {
+                enterIcon.classList.remove('hidden');
+                exitIcon.classList.add('hidden');
+            }
+        });
+        
+        function savePreference(key, value) {
+            localStorage.setItem(`grammarToneAI_v2_${key}`, value);
+        }
+
+        function loadPreferences() {
+            const model = localStorage.getItem('grammarToneAI_v2_model');
+            const tone = localStorage.getItem('grammarToneAI_v2_tone');
+            if (model) modelSelect.value = model;
+            if (tone) toneSelect.value = tone;
+        }
+        
+        // Initial setup
+        loadPreferences();
+        updateCharCounter();
+    });
+    </script>
+</body>
+</html>
